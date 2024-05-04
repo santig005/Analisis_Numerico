@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{nombre_metodo}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+    </style>    
+    <!-- Agrega aquí los enlaces para los estilos CSS necesarios -->
+</head>
+<body>
+
+<div class="sidebar">
+    <!-- Agrega aquí los enlaces para los diferentes métodos si lo deseas -->
+</div>
+
+<div class="content">
+    <h1>{{nombre_metodo}}</h1>
+    
+    <div class="result-container">
+        <!-- Aquí se mostrará la tabla generada -->
+        {{ df | safe }}
+    </div>
+    <h3 >{{ mensaje }}</h3>
+    <div class="plot-container">
+        <!-- Aquí se mostrará el gráfico de Plotly -->
+        {{ plot_html | safe }}
+    </div>
+    <button onclick="window.location.href = '/';">Volver</button>
+</div>
+
+<!-- Agrega aquí los scripts necesarios, como el de Plotly si es necesario -->
+
+</body>
+</html>

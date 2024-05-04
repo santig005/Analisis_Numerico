@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metodos Numericos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar {
+            height: 100%;
+            width: 200px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #f0f0f0;
+            padding-top: 20px;
+        }
+        .sidebar a {
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+        .content {
+            margin-left: 220px;
+            padding: 20px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <a href="#metodo1" onclick="showForm('biseccion')">Bisección</a>
+    <a href="#metodo2" onclick="showForm('regla_falsa')">Regla Falsa</a>
+    <a href="#metodo3" onclick="showForm('punto_fijo')">Punto Fijo</a>
+    <a href="#metodo4" onclick="showForm('newton')">Newton</a>
+    <a href="#metodo5" onclick="showForm('secante')">Secante</a>
+    <a href="#metodo6" onclick="showForm('raices_multiples')">Raices Multiples</a>
+    
+</div>
+
+<div class="content">
+    <div id="biseccion-form" class="form-container">
+        <h1 id="method-title">Biseccion</h1>
+        <p>Para garantizar la precisión y eficacia del método de secante en el cálculo de raíces de funciones, es fundamental cumplir con las siguientes condiciones:<br><br>
+
+            "x0" debe ser menor que "x1", ya que el método de secante trabaja en un intervalo cerrado.<br><br>
+            "El intervalo debe contener una raíz de la función, es decir, f(x0) * f(x1) < 0"<br><br>
+            
+            La función a evaluar debe ser continua en el intervalo especificado y debe cumplir el siguiente formato. EJM: x**3 + 7*x**2 - 60<br><br>
+            La tolerancia puede ser ingresada en formato decimal EJM: 0.0001 o punto flotante EJM 0.5e-5</p>
+        <form method="post" action="{% url 'biseccion' %}">
+            {% csrf_token %}
+            <label for="xi_bs">Valor de x inferior:</label>
+            <input type="text" id="xi_bs" name="xi">
+            <label for="xs_bs">Valor de x superior:</label>
+            <input type="text" id="xs_bs" name="xs">
+            <label for="tol_bs">Tolerancia:</label>
+            <input type="text" id="tol_bs" name="tol">
+            <label for="niter_bs">Numero máximo de iteraciones:</label>
+            <input type="text" id="niter_bs" name="niter">
+            <label for="funcion_bs">Función:</label>
+            <input type="text" id="funcion_bs" name="funcion">
+            <button type="submit">Calcular</button>
+        </form>
+    </div>
+
+    <div id="regla_falsa-form" class="form-container hidden">
+        <h1 id="method-title">Regla Falsa</h1>
+        <h2>Ingrese los valores de a, b, tolerancia y la función La funcion ingresela de esta manera EJM: x**3 + 7*x**2 - 60</h2>
+        <form method="post" action="{% url 'regla_falsa' %}">
+            {% csrf_token %}
+            <label for="a_rf">Valor de a:</label>
+            <input type="text" id="a_rf" name="a">
+            <label for="b_rf">Valor de b:</label>
+            <input type="text" id="b_rf" name="b">
+            <label for="tolerancia_rf">Tolerancia:</label>
+            <input type="text" id="tolerancia_rf" name="tolerancia">
+            <label for="funcion_rf">Función:</label>
+            <input type="text" id="funcion_rf" name="funcion">
+            <button type="submit">Calcular</button>
+        </form>
+    </div>
+    
+    <div id="punto_fijo-form" class="form-container hidden">
+        <h1 id="method-title">Punto Fijo</h1>
+        <form method="post" action="#">
+            {% csrf_token %}
+            <label for="punto_inicial">Punto inicial:</label>
+            <input type="text" id="punto_inicial" name="punto_inicial">
+            <button type="submit">Calcular</button>
+        </form>
+    </div>
+    
+
+    <div id="newton-form" class="form-container hidden">
+        <h1 id="method-title">Newton</h1>
+        <form method="post" action="#">
+            {% csrf_token %}
+            
+            <label for="punto_inicial">Punto inicial:</label>
+            <input type="text" id="punto_inicial" name="punto_inicial">
+            <button type="submit">Calcular</button>
+        </form>
+    </div>
+
+
+    <div id="secante-form" class="form-container hidden">
+        <h1 id="Secante">Secante</h1>
+        <p>Para garantizar la precisión y eficacia del método de secante en el cálculo de raíces de funciones, es fundamental cumplir con las siguientes condiciones:<br><br>
+            "x inferior" debe ser menor que "x superior", ya que el método de secante trabaja en un intervalo cerrado.<br><br>
+            
+            La función a evaluar debe ser continua en el intervalo especificado y debe cumplir el siguiente formato. EJM: x**3 + 7*x**2 - 60<br><br>
+            La tolerancia toma el error relativo ser ingresada en formato decimal EJM: 0.0001 o punto flotante EJM 0.5e-5.Ej Si se quiere un error menor al 1% poner 0.01</p>
+        <form method="post" action="{% url 'secante' %}">
+        <form method="post" action="#">
+            {% csrf_token %}
+            
+            <label for="x0_sc">Valor de x0 (inferior):</label>
+            <input type="text" id="x0_sc" name="x0">
+            <label for="x1_sc">Valor de x1 (superior):</label>
+            <input type="text" id="x1_sc" name="x1">
+            <label for="tol_sc">Tolerancia (error relativo):</label>
+            <input type="text" id="tol_sc" name="tol">
+            <label for="niter_sc">Numero máximo de iteraciones:</label>
+            <input type="text" id="niter_sc" name="niter">
+            <label for="funcion_sc">Función:</label>
+            <input type="text" id="funcion_sc" name="funcion">
+            <button type="submit">Calcular</button> 
+        </form>
+    </div>
+
+    <div id="raices_multiples-form" class="form-container hidden">
+        <h1 id="method-title">Raices multiples</h1>
+        <form method="post" action="#">
+            {% csrf_token %}
+            
+            <label for="punto_inicial">Punto inicial:</label>
+            <input type="text" id="punto_inicial" name="punto_inicial">
+            <button type="submit">Calcular</button>
+        </form>
+    </div>
+
+
+</div>
+
+<script>
+    function showForm(method) {
+        document.querySelectorAll('.form-container').forEach(function(form) {
+            form.classList.add('hidden');
+        });
+        document.getElementById(method + '-form').classList.remove('hidden');
+        document.getElementById('method-title').innerText = method.replace('_', ' ').charAt(0).toUpperCase() + method.replace('_', ' ').slice(1);
+
+    }
+</script>
+
+</body>
+</html>
