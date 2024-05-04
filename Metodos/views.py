@@ -76,8 +76,12 @@ def biseccion(request):
         tol = float(request.POST['tol'])
         niter = int(request.POST['niter'])
         funcion = request.POST['funcion']
+
         xi_copy=xi
         xs_copy=xs
+        hay_solucion=False
+        solucion=0
+        fsolucion=0
 
         x = sp.symbols('x')
         funcion_expr = parse_expr(funcion, local_dict={'x': x})
@@ -87,12 +91,7 @@ def biseccion(request):
         absoluto = abs(xs-xi)/2
         itera = 0
         xm = 0
-        hay_solucion=False
-        solucion=0
-        fsolucion=0
-
-        #fi=fx(xi)
-        #fs=fx(xs)
+        
         fi = funcion_expr.subs(x, xi).evalf()
         fs=funcion_expr.subs(x, xs).evalf()
         if fi==0:
@@ -164,29 +163,10 @@ def biseccion(request):
         # Calculate relative error
         
 
-        columnas = ['xi', 'xm','xs','f(xi)' ,'f(xm)','f(xs)', 'Err Abs ', 'Err Rel']
+        columnas = ['xi', 'xm','xs','f(xi)' ,'f(xm)','f(xs)', 'Err abs ', 'Err Rel']
         df = pd.DataFrame(tabla, columns=columnas)
         df.index = np.arange(1, len(df) + 1)
 
-
-        '''
-        coeficientes = sp.Poly(funcion).all_coeffs()
-        raices = np.real(np.roots(coeficientes))
-        raices_en_intervalo = [r for r in raices if xi <= r <= xs]
-
-        intervalo_x = np.arange(xi, xs, 0.1)
-        intervalo_y = fx(intervalo_x)
-        intervalo_x_completo = np.arange(xi, xs+0.1, 0.1)
-        intervalo_y_completo = fx(intervalo_x_completo)
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
-        fig.add_trace(go.Scatter(x=raices_en_intervalo, y=[0]*len(raices_en_intervalo), mode='markers', name='Raíces'))
-        fig.update_layout(title=f'Función: {funcion} en intervalo [{xi}, {xs}]',
-                          xaxis_title='x',
-                          yaxis_title='f(x)')
-
-        plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
-        '''
         intervalo_x = np.arange(xi_copy, xs_copy,0.1)
         fx = sp.lambdify(x, funcion_expr, 'numpy')
         intervalo_y = fx(intervalo_x)
@@ -196,7 +176,8 @@ def biseccion(request):
         # Crear figura
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
-        fig.add_trace(go.Scatter(x=[str(solucion)], y=[str(fsolucion)], mode='markers', name='Raíz hallada'))
+        if hay_solucion:
+            fig.add_trace(go.Scatter(x=[str(solucion)], y=[str(fsolucion)], mode='markers', name='Raíz hallada'))
         fig.update_layout(title=f'Función: {funcion} en intervalo [{xi_copy}, {xs_copy}]',
                         xaxis_title='x',
                         yaxis_title='f(x)')
@@ -215,32 +196,46 @@ def secante(request):
         tol = float(request.POST['tol'])
         niter = int(request.POST['niter'])
         funcion = request.POST['funcion']
-
         x = sp.symbols('x')
-        fx = lambda x: eval(funcion)
+        funcion_expr = parse_expr(funcion, local_dict={'x': x})
+        fx = lambda x: funcion_expr.subs(x, x0)
 
-        print(f'x0: {x0}, x1: {x1}, tol: {tol}, niter: {niter}, funcion: {funcion}')
+        xi_copy=x0
+        xs_copy=x1
+        hay_solucion=False
+        solucion=0
+        fsolucion=0
+        relativo=tol+1
 
         tabla = []
         itera = 1
         x2 = 0
-        f0=fx(x0)
-        f1=fx(x1)
+        f0=funcion_expr.subs(x, x0).evalf()
+        f1=funcion_expr.subs(x, x1).evalf()
         if f0==0:
             s=x0
             mensaje="La solución es: "+str(s)
+            hay_solucion=True
+            solucion=x0
+            fsolucion=f0
         elif f1==0:
             s=x1
             mensaje="La solución es: "+str(s)
+            hay_solucion=True
+            solucion=x1
+            fsolucion=f1
         else:
             x2=x1-((f1*(x0-x1))/(f0-f1))
-            f2=fx(x2)
+            f2=funcion_expr.subs(x, x2).evalf()
             if x2!=0:
                 relativo=abs((x2-x1)/x2)*100
             else:
                 relativo=(abs(x1)/0.0000001)*100
             if f2==0:
                 mensaje="La solución es: "+str(x2)
+                hay_solucion=True
+                solucion=x2
+                fsolucion=f2
                 tabla.append([itera,x0, x1, x2, f0, f1, f2, 0,"-","-"])
             else:
                 tabla.append([itera,x0, x1, x2, f0, f1, f2, abs(x2-x1),"-","-"])
@@ -251,17 +246,20 @@ def secante(request):
                 itera+=1
                 while itera < niter and tol < relativo and f1!=0 and f0!=0:
                     x2 = x1-((f1*(x0-x1))/(f0-f1))
-                    f2 = fx(x2)
+                    f2 = funcion_expr.subs(x, x2).evalf()
                     if x2!=0:
                         relativo=abs((x2-x1)/x2)*100
                     else:
                         relativo=(abs(x1)/0.0000001)*100
                     if f2==0:
                         mensaje="La solución es: "+str(x2)+"\n En la iteracion "+str(itera)
-                        tabla.append([itera,x0, x1, x2, f0, f1, f2, 0,relativo,relativo*100])
+                        hay_solucion=False
+                        solucin=x2
+                        fsolucion=f2
+                        tabla.append([itera,x0, x1, x2, f0, f1, f2, 0,relativo])
                         break     
-                    absoluto=(x2-x1)
-                    tabla.append([itera,x0, x1, x2, f0, f1, f2, absoluto,relativo,relativo*100])
+                    absoluto=abs(x2-x1)
+                    tabla.append([itera,x0, x1, x2, f0, f1, f2, absoluto,relativo])
                     x0=x1
                     f0=f1
                     x1=x2
@@ -269,23 +267,32 @@ def secante(request):
                     itera+=1
                 if f1==0:
                     mensaje="La solución es: "+str(x1)
+                    hay_solucion=True
+                    solucion=x1
+                    fsolucion=f1
                 if relativo<tol:
                     mensaje="La solución aproximada que cumple la tolerancia es : "+str(x2)+" En la iteracion "+str(itera)+" = x"+str(itera)
+                    hay_solucion=True
+                    solucion=x2
+                    fsolucion=f2
                 elif itera==niter:
                     mensaje="Se ha alcanzado el número máximo de iteraciones"
 
-        columnas = ['i','xi-1', 'xi', 'xi+1', 'f(xi-1)', 'f(xi)', 'f(xi+1)','Err Abs', 'Err Rel','Err Rel %']
+        columnas = ['i','xi-1', 'xi', 'xi+1', 'f(xi-1)', 'f(xi)', 'f(xi+1)','Err abs', 'Err Rel']
         df = pd.DataFrame(tabla, columns=columnas)
 
-        intervalo_x = np.arange(x0, x1, 0.1)
+        intervalo_x = np.arange(xi_copy, xs_copy,0.1)
+        fx = sp.lambdify(x, funcion_expr, 'numpy')
         intervalo_y = fx(intervalo_x)
-        intervalo_x_completo = np.arange(x0, x1+0.1, 0.1)
+        intervalo_x_completo = np.arange(xi_copy, xs_copy,0.1)
         intervalo_y_completo = fx(intervalo_x_completo)
         
         # Crear figura
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
-        fig.update_layout(title=f'Función: {funcion} en intervalo [{x0}, {x1}]',
+        if hay_solucion:
+            fig.add_trace(go.Scatter(x=[str(solucion)], y=[str(fsolucion)], mode='markers', name='Raíz hallada'))
+        fig.update_layout(title=f'Función: {funcion} en intervalo [{xi_copy}, {xs_copy}]',
                         xaxis_title='x',
                         yaxis_title='f(x)')
         
