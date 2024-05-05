@@ -55,7 +55,7 @@
 
 <div class="content">
     <div id="biseccion-form" class="form-container">
-        <h1 id="method-title">Biseccion</h1>
+        <h1 id="method-title">Bisección</h1>
         <p>Para garantizar la precisión y eficacia del método de secante en el cálculo de raíces de funciones, es fundamental cumplir con las siguientes condiciones:<br><br>
 
             "x0" debe ser menor que "x1", ya que el método de secante trabaja en un intervalo cerrado.<br><br>
@@ -69,6 +69,12 @@
             <input type="text" id="xi_bs" name="xi">
             <label for="xs_bs">Valor de x superior:</label>
             <input type="text" id="xs_bs" name="xs">
+            <label for="tipo_error">Tipo de error:</label>
+            <input type="radio" id="absoluto" name="tipo_error" value="absoluto">
+            <label for="absoluto">Absoluto</label>
+            <input type="radio" id="relativo" name="tipo_error" value="relativo">
+            <label for="relativo">Relativo</label>
+            <br>
             <label for="tol_bs">Tolerancia:</label>
             <input type="text" id="tol_bs" name="tol">
             <label for="niter_bs">Numero máximo de iteraciones:</label>
@@ -134,7 +140,13 @@
             <input type="text" id="x0_sc" name="x0">
             <label for="x1_sc">Valor de x1 (superior):</label>
             <input type="text" id="x1_sc" name="x1">
-            <label for="tol_sc">Tolerancia (error relativo):</label>
+            <label for="tipo_error">Tipo de error:</label>
+            <input type="radio" id="absoluto" name="tipo_error" value="absoluto">
+            <label for="absoluto">Absoluto</label>
+            <input type="radio" id="relativo" name="tipo_error" value="relativo">
+            <label for="relativo">Relativo</label>
+            <br>
+            <label for="tol_sc">Tolerancia:</label>
             <input type="text" id="tol_sc" name="tol">
             <label for="niter_sc">Numero máximo de iteraciones:</label>
             <input type="text" id="niter_sc" name="niter">
