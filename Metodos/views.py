@@ -4,14 +4,14 @@ import pandas as pd
 import sympy as sp
 from sympy import *
 from django.utils.safestring import mark_safe
-import plotly.graph_objs as go
+from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi
+
 def home(request):
     return render(request, 'All_methods.html')
 
 
 def regla_falsa(request):
     if request.method == 'POST':
-    
         a = float(request.POST['a'])
         b = float(request.POST['b'])
         tolerancia = float(request.POST['tolerancia'])
@@ -349,6 +349,50 @@ def secante(request):
             mensaje=mark_safe(mensaje)
             context = {'mensaje':mensaje}
             return render(request, 'one_method.html', context)
+
+def iterativos(request):
+    if request.method == 'POST':
+        tamaño=request.POST['numero']
+        metodo=request.POST['metodo_iterativo']
+        tol=request.POST['tol']
+        niter=request.POST['niter']
+        try:
+            matriz=[]
+            tamaño=int(tamaño)
+            tol=float(tol)
+            niter=int(niter)
+            i=0
+            for i in range(tamaño):
+                row = []
+                j=0
+                for j in range(tamaño):
+                    val = request.POST.get(f'matrix_cell_{i}_{j}')
+                    row.append(int(val) if val else 0)
+                matriz.append(row)
+            vectorx=[]
+            for i in range(tamaño):
+                val = request.POST.get(f'vx_cell_{i}')
+                vectorx.append(int(val) if val else 0)
+            vectorb=[]
+            for i in range(tamaño):
+                val = request.POST.get(f'vb_cell_{i}')
+                vectorb.append(int(val) if val else 0)
+            nmatriz=np.array(matriz)
+            nvectorx = np.array(vectorx).reshape(-1, 1)
+            nvectorb = np.array(vectorb).reshape(-1, 1)
+            print("vamos para el if")
+            if metodo=="jacobi":
+                context=metodo_jacobi(nmatriz,nvectorx,nvectorb,tol,niter)
+            elif metodo=="gauss_seidel":
+                context=metodo_gauss_seidel(nmatriz,nvectorx,nvectorb,tol,niter)
+            elif metodo=="sor":
+                context=metodo_sor(nmatriz,nvectorx,nvectorb,tol,niter)
+            return render(request,'resultado_iterativo.html',context)
+
+        except:
+            context={'mensaje':'No se pudo realizar la operación'}
+            return render(request,'resultado_iterativo.html',context)
+
 
 
         
