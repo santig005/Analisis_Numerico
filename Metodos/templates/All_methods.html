@@ -50,6 +50,7 @@
     <a href="#metodo4" onclick="showForm('newton')">Newton</a>
     <a href="#metodo5" onclick="showForm('secante')">Secante</a>
     <a href="#metodo6" onclick="showForm('raices_multiples')">Raices Multiples</a>
+    <a href="#metodo7" onclick="showForm('metodos_iterativos')">Metodos iterativos</a>
     
 </div>
 
@@ -166,8 +167,59 @@
             <button type="submit">Calcular</button>
         </form>
     </div>
+    <div id="metodos_iterativos-form" class="form-container hidden">
+        <h1 id="method-title">Metodos iterativos</h1>
+        <p>Para garantizar la precisión y eficacia del método iterativo, es fundamental cumplir con las siguientes condiciones:<br><br>
+            Llene todos los campos y selectores.
+            La matriz debe ser invertible, que en su diagonal no hayan 0's<br><br>
+            Los campos de la matriz o de los vectores que no sean ingresados serán asumidos como 0<br><br>
 
-
+            La tolerancia puede ser ingresada en formato decimal EJM: 0.0001 o punto flotante EJM 0.5e-5</p>
+        <form method="post" action="{% url 'iterativos' %}">
+            {% csrf_token %}
+            <label for="metodo_iterativo">Método iterativo:</label>
+            <select id="metodo_iterativo" name="metodo_iterativo">
+                <option value="gauss_seidel">Gauss-Seidel</option>
+                <option value="jacobi">Jacobi</option>
+                <option value="sor">SOR</option>
+            </select>
+            <label for="tamaño_matriz">Tamaño matriz (hasta 10):</label><input type="number" id="numero" name="numero" min="1" max="10" onchange="showMatrix(this.value)">
+            <br>
+            <label for="tol_sc">Tolerancia:</label>
+            <input type="text" id="tol_sc" name="tol">
+            <label for="niter_sc">Numero máximo de iteraciones:</label>
+            <input type="text" id="niter_sc" name="niter">
+            <div id="matrix-container" class="hidden">
+                <h2>Matriz</h2>
+                <table id="matrix" name="matrix_name">
+                    <!-- Matrix entries will be dynamically added here -->
+                </table>
+            </div>
+            <table>
+                <tr>
+                    <td>
+                        <div id="vectorx-container" class="hidden">
+                            <h2>Vector inicial (x0) |-|-| </h2>
+                            <table id="vectorx">
+                                <!-- Matrix entries will be dynamically added here -->
+                            </table>
+                        </div>
+                    </td>
+                    <td>
+                        <div id="vectorb-container" class="hidden">
+                            <h2>Vector (b)</h2>
+                            <table id="vectorb">
+                                <!-- Matrix entries will be dynamically added here -->
+                            </table>
+                        </div>
+                    </td>
+                    <td>
+                        <button type="submit">Evaluar</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -177,6 +229,45 @@
         });
         document.getElementById(method + '-form').classList.remove('hidden');
         document.getElementById('method-title').innerText = method.replace('_', ' ').charAt(0).toUpperCase() + method.replace('_', ' ').slice(1);
+
+    }
+</script>
+<script>
+    function showMatrix(size) {
+        var matrixContainer = document.getElementById("matrix-container");
+        var matrixTable = document.getElementById("matrix");
+        matrixTable.innerHTML = ""; // Clear previous matrix
+
+        for (var i = 0; i < size; i++) {
+            var row = matrixTable.insertRow();
+            for (var j = 0; j < size; j++) {
+                var cell = row.insertCell();
+                cell.innerHTML = `<input type='number' min='-999' max='999' name='matrix_cell_${i}_${j}'>`;
+            }
+        }
+        matrixContainer.classList.remove("hidden");
+
+        var vectorxContainer=document.getElementById("vectorx-container");
+        var vectorxTable=document.getElementById("vectorx");
+        vectorxTable.innerHTML="";
+        for (var i = 0; i < size; i++) {
+            var row = vectorxTable.insertRow();
+            var cell = row.insertCell();
+            cell.innerHTML = `<input type='number' min='-999' max='999' name='vx_cell_${i}'>`;
+        }
+        vectorxContainer.style.display="block";
+
+        var vectorbContainer=document.getElementById("vectorb-container");
+        var vectorbTable=document.getElementById("vectorb");
+        vectorbTable.innerHTML="";
+        for (var i = 0; i < size; i++) {
+            var row = vectorbTable.insertRow();
+            var cell = row.insertCell();
+            cell.innerHTML = `<input type='number' min='-999' max='999' name='vb_cell_${i}'>`;
+        }
+        vectorbContainer.style.display="block";
+
+
 
     }
 </script>
