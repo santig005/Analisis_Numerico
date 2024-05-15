@@ -4,6 +4,7 @@ import pandas as pd
 import sympy as sp
 from sympy import *
 from django.utils.safestring import mark_safe
+import plotly.graph_objects as go
 from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi
 
 def home(request):
@@ -181,7 +182,7 @@ def biseccion(request):
             columnas = ['xi', 'xm','xs','f(xi)' ,'f(xm)','f(xs)', 'Err abs ', 'Err Rel']
             df = pd.DataFrame(tabla, columns=columnas)
             df.index = np.arange(1, len(df) + 1)
-
+            
             intervalo_x = np.arange(xi_copy, xs_copy,0.1)
             fx = sp.lambdify(x, funcion_expr, 'numpy')
             intervalo_y = fx(intervalo_x)
@@ -189,7 +190,10 @@ def biseccion(request):
             intervalo_y_completo = fx(intervalo_x_completo)
             
             # Crear figura
+
+
             fig = go.Figure()
+            
             fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
             if hay_solucion:
                 fig.add_trace(go.Scatter(x=[str(solucion)], y=[str(fsolucion)], mode='markers', name='Raíz hallada'))
