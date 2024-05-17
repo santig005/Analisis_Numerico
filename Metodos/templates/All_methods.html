@@ -178,7 +178,7 @@
         <form method="post" action="{% url 'iterativos' %}">
             {% csrf_token %}
             <label for="metodo_iterativo">Método iterativo:</label>
-            <select id="metodo_iterativo" name="metodo_iterativo">
+            <select id="metodo_iterativo" name="metodo_iterativo" onchange="ismethodsor(this.value)">
                 <option value="gauss_seidel">Gauss-Seidel</option>
                 <option value="jacobi">Jacobi</option>
                 <option value="sor">SOR</option>
@@ -189,6 +189,11 @@
             <input type="text" id="tol_sc" name="tol">
             <label for="niter_sc">Numero máximo de iteraciones:</label>
             <input type="text" id="niter_sc" name="niter">
+            <br>
+            <div id="w_container" class="hidden">
+                <label for="w_sc">Valor de w:</label>
+                <input type="text" id="w_sc" name="w">
+            </div>
             <div id="matrix-container" class="hidden">
                 <h2>Matriz</h2>
                 <table id="matrix" name="matrix_name">
@@ -221,7 +226,15 @@
         </form>
     </div>
 </div>
-
+<script>
+    function ismethodsor(method){
+        if(method == "sor"){
+            document.getElementById("w_container").classList.remove("hidden");
+            }else{
+                document.getElementById("w_container").classList.add("hidden");
+                }
+    }
+</script>
 <script>
     function showForm(method) {
         document.querySelectorAll('.form-container').forEach(function(form) {
@@ -266,9 +279,6 @@
             cell.innerHTML = `<input type='number' min='-999' max='999' name='vb_cell_${i}'>`;
         }
         vectorbContainer.style.display="block";
-
-
-
     }
 </script>
 

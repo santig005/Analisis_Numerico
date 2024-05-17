@@ -5,7 +5,7 @@ import sympy as sp
 from sympy import *
 from django.utils.safestring import mark_safe
 import plotly.graph_objects as go
-from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi
+from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi,metodo_sor
 from .utiles.saver import dataframe_to_txt,plot_to_png
 
 def home(request):
@@ -366,11 +366,15 @@ def iterativos(request):
         metodo=request.POST['metodo_iterativo']
         tol=request.POST['tol']
         niter=request.POST['niter']
+        if metodo=="sor":
+            w=request.POST['w']
         try:
             matriz=[]
             tamaño=int(tamaño)
             tol=float(tol)
             niter=int(niter)
+            if metodo=="sor":
+                w=float(w)
             i=0
             for i in range(tamaño):
                 row = []
@@ -390,13 +394,12 @@ def iterativos(request):
             nmatriz=np.array(matriz)
             nvectorx = np.array(vectorx).reshape(-1, 1)
             nvectorb = np.array(vectorb).reshape(-1, 1)
-            print("vamos para el if")
             if metodo=="jacobi":
                 context=metodo_jacobi(nmatriz,nvectorx,nvectorb,tol,niter)
             elif metodo=="gauss_seidel":
                 context=metodo_gauss_seidel(nmatriz,nvectorx,nvectorb,tol,niter)
             elif metodo=="sor":
-                context=metodo_sor(nmatriz,nvectorx,nvectorb,tol,niter)
+                context=metodo_sor(nmatriz,nvectorx,nvectorb,tol,niter,w)
             return render(request,'resultado_iterativo.html',context)
 
         except:

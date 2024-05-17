@@ -75,11 +75,54 @@ def radio_espectral(matriz):
     radio_espectral = np.abs(max(eigenvalores, key=abs))
     return radio_espectral
 
-def metodo_sor(a,x0,b,tol,niter):
-    print("entro en sor")
-    print(a)
-    print(x0)
-    print(b)
-    print(tol)
-    print(niter)
+def metodo_sor(A,x0,b,Tol,niter,w):
+    c = 0
+    error = Tol + 1
+    D = np.diag(np.diag(A))
+    L = -np.tril(A, -1)
+    U = -np.triu(A, +1)
+    tabla = { 'Error': [], 'Vector xi': []}
+    respuesta={'solucion':False}
+    if np.linalg.det(D) == 0:
+        mensaje="La matriz no es invertible"
+        respuesta['mensaje']= mensaje
+        return respuesta
+    tabla['Error'].append(0)
+    tabla['Vector xi'].append(x0)
+    while error > Tol and c < niter:
+        T = np.linalg.inv(D - w * L) @ ((1 - w) * D + w * U)
+        C = w * np.linalg.inv(D - w * L) @ b
+        x1 = T @ x0 + C
+        E = np.linalg.norm(x1 - x0, np.inf)
+        tabla['Error'].append(E)
+        tabla['Vector xi'].append(x1)
+        error = E
+        x0 = x1
+        c += 1
+    print("salimos del while ")
+    respuesta['T']=pd.DataFrame(T)
+    respuesta['C']=pd.DataFrame(C)
+    respuesta['radio_esp']=radio_espectral(T)
+    respuesta['tabla'] = pd.DataFrame(tabla)
+    if error < Tol:
+        s = x0
+        n = c
+        mensaje='Se alcanzó una aproximación de la solución del sistema que cumple tolerancia ='+str(Tol)
+        respuesta['solucion']=True
+        respuesta['mensaje']=mensaje
+    else:
+        s = x0
+        n = c
+        mensaje='Fracasó en '+str(niter)+' iteraciones'
+        respuesta['mensaje']=mensaje
+    print("intentemos ver si if solucion")
+    
+    if respuesta['solucion']:
+        respuesta['df']=respuesta['tabla'].to_html()
+        respuesta['nombre_metodo']='SOR'
+        respuesta['T']=respuesta['T'].to_html()
+        respuesta['C']=respuesta['C'].to_html()
+    print("listo el if")
+    return respuesta
+
 
