@@ -12,3 +12,11 @@ def dataframe_to_txt(dataframe, filename):
             f.write(table)
     except Exception as e:
         print("An error occurred while transcribing the dataframe:", str(e))
+    
+def plot_to_png(fig, filename):
+    if not os.path.exists('resultados'):
+        os.makedirs('resultados')
+    try:
+        fig.write_image(f'resultados/{filename}.png')
+    except Exception as e:
+        print("An error occurred while saving the plot as PNG:", str(e))
