@@ -6,6 +6,7 @@ from sympy import *
 from django.utils.safestring import mark_safe
 import plotly.graph_objects as go
 from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi
+from .utiles.saver import dataframe_to_txt
 
 def home(request):
     return render(request, 'All_methods.html')
@@ -183,6 +184,7 @@ def biseccion(request):
             df = pd.DataFrame(tabla, columns=columnas)
             df.index = np.arange(1, len(df) + 1)
             
+            
             intervalo_x = np.arange(xi_copy, xs_copy,0.1)
             fx = sp.lambdify(x, funcion_expr, 'numpy')
             intervalo_y = fx(intervalo_x)
@@ -202,6 +204,7 @@ def biseccion(request):
                             yaxis_title='f(x)')
             
             plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+            dataframe_to_txt(df,"biseccion")
             context = {'df': df.to_html(), 'plot_html': plot_html}
             mensaje=mark_safe(mensaje)
             context['mensaje']=mensaje
@@ -343,6 +346,7 @@ def secante(request):
                             yaxis_title='f(x)')
             
             plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+            dataframe_to_txt(df,"secante")
             context = {'df': df.to_html(), 'plot_html': plot_html}
             mensaje=mark_safe(mensaje)
             context['mensaje']=mensaje
