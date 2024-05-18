@@ -12,62 +12,240 @@ def home(request):
     return render(request, 'All_methods.html')
 
 
-def regla_falsa(request):
+def reglaFalsaView(request):
+    datos = ()
     if request.method == 'POST':
-        a = float(request.POST['a'])
-        b = float(request.POST['b'])
-        tolerancia = float(request.POST['tolerancia'])
-        funcion = request.POST['funcion']
+        fx = request.POST["funcion"]
+
+        x0 = request.POST["a"]
+        X0 = float(x0)
+
+        xi = request.POST["b"]
+        Xi = float(xi)
+
+        tol = request.POST["tolerancia"]
+        Tol = float(tol)
+
+        niter = request.POST["iteraciones"]
+        Niter = int(niter)
+
+        datos = reglaFalsa(X0, Xi, Niter, Tol, fx)
+        df = pd.DataFrame(datos["results"], columns=datos["columns"])
 
         x = sp.symbols('x')
-        fx = lambda x: eval(funcion)
-
-        a_inicial = a
-        b_inicial = b
-        tolera = tolerancia
-
-        tabla = []
-        tramo = abs(b - a)
-        fa = fx(a)
-        fb = fx(b)
-
-        while not(tramo <= tolera):
-            c = b - fb * (a - b) / (fa - fb)
-            fc = fx(c)
-            tabla.append([a, c, b, fa, fc, fb, tramo])
-            cambio = np.sign(fa) * np.sign(fc)
-            if cambio > 0:
-                tramo = abs(c - a)
-                a = c
-                fa = fc
-            else:
-                tramo = abs(b - c)
-                b = c
-
-        columnas = ['a', 'c', 'b', 'fa', 'fc', 'fb', 'Error']
-        df = pd.DataFrame(tabla, columns=columnas)
-
-        coeficientes = sp.Poly(funcion).all_coeffs()
-        raices = np.real(np.roots(coeficientes))
-        raices_en_intervalo = [r for r in raices if a_inicial <= r <= b_inicial]
-
-        intervalo_x = np.arange(a_inicial, b_inicial, 0.1)
-        intervalo_y = fx(intervalo_x)
-        intervalo_x_completo = np.arange(a_inicial, b_inicial+0.1, 0.1)
-        intervalo_y_completo = fx(intervalo_x_completo)
+        funcion_expr = sp.sympify(fx)
+        
+        xi_copy = X0
+        xs_copy = Xi
+        
+        intervalo_x = np.arange(xi_copy, xs_copy, 0.1)
+        fx_func = sp.lambdify(x, funcion_expr, 'numpy')
+        intervalo_y = fx_func(intervalo_x)
+        intervalo_x_completo = np.arange(xi_copy, xs_copy, 0.1)
+        intervalo_y_completo = fx_func(intervalo_x_completo)
+        
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
-        fig.add_trace(go.Scatter(x=raices_en_intervalo, y=[0]*len(raices_en_intervalo), mode='markers', name='Raíces'))
-        fig.update_layout(title=f'Función: {funcion} en intervalo [{a_inicial}, {b_inicial}]',
+        
+        if datos.get("root") is not None:
+            fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[float(0)], mode='markers', name='Raíz hallada'))
+        
+        fig.update_layout(title=f'Función: {fx} en intervalo [{xi_copy}, {xs_copy}]',
                           xaxis_title='x',
                           yaxis_title='f(x)')
-
+        
         plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
 
+        dataframe_to_txt(df, f'ReglaFalsa {fx}')
+        plot_to_png(fig,f'ReglaFalsa {fx}')
+
+    if datos:
         context = {'df': df.to_html(), 'plot_html': plot_html}
         return render(request, 'regla_falsa.html', context)
 
     return render(request, 'regla_falsa.html')
+
+def reglaFalsa(a, b, Niter, Tol, fx):
+
+    output = {
+        "columns": ["iter", "a", "xm", "b", "f(xm)", "E"]
+    }
+
+    #configuración inicial
+    datos = list()
+    x = sp.Symbol('x')
+    i = 1
+    cond = Tol
+    error = 1.0000000
+
+    Fun = sympify(fx)
+
+    xm = 0
+    xm0 = 0
+    Fx_2 = 0
+    Fx_3 = 0
+    Fa = 0
+    Fb = 0
+
+    try:
+        while (error > cond) and (i < Niter):
+            if i == 1:
+                Fx_2 = Fun.subs(x, a)
+                Fx_2 = Fx_2.evalf()
+                Fa = Fx_2
+
+                Fx_2 = Fun.subs(x, b)
+                Fx_2 = Fx_2.evalf()
+                Fb = Fx_2
+
+                xm = (Fb*a - Fa*b)/(Fb-Fa)
+                Fx_3 = Fun.subs(x, xm)
+                Fx_3 = Fx_3.evalf()
+                datos.append([i, '{:^15.7f}'.format(a), '{:^15.7f}'.format(xm), '{:^15.7f}'.format(b), '{:^15.7E}'.format(Fx_3)])
+            else:
+
+                if (Fa*Fx_3 < 0):
+                    b = xm
+                else:
+                    a = xm
+
+                xm0 = xm
+                Fx_2 = Fun.subs(x, a) #Función evaluada en a
+                Fx_2 = Fx_2.evalf()
+                Fa = Fx_2
+
+                Fx_2 = Fun.subs(x, b) #Función evaluada en a
+                Fx_2 = Fx_2.evalf()
+                Fb = Fx_2
+
+                xm = (Fb*a - Fa*b)/(Fb-Fa) #Calcular intersección en la recta en el eje x
+
+                Fx_3 = Fun.subs(x, xm) #Función evaluada en xm (f(xm))
+                Fx_3 = Fx_3.evalf()
+
+                error = Abs(xm-xm0)
+                er = sympify(error)
+                error = er.evalf()
+                datos.append([i, '{:^15.7f}'.format(a), '{:^15.7f}'.format(xm), '{:^15.7f}'.format(b), '{:^15.7E}'.format(Fx_3), '{:^15.7E}'.format(error)])
+            i += 1
+    except BaseException as e:
+        if str(e) == "can't convert complex to float":
+            output["errors"].append(
+                "Error in data: found complex in calculations")
+        else:
+            output["errors"].append("Error in data: " + str(e))
+
+        return output
+
+    output["results"] = datos
+    output["root"] = xm
+    return output
+
+
+def puntoFijo(X0, Tol, Niter, fx, gx):
+
+    output = {
+        "columns": ["iter", "xi", "g(xi)", "f(xi)", "E"],
+        "results": [],
+        "errors": []
+    }
+
+    # Configuración inicial
+    x = sp.Symbol('x')
+    i = 1
+    error = 1.000
+
+    Fx = sp.sympify(fx)
+    Gx = sp.sympify(gx)
+
+    # Iteración 0
+    xP = X0  # Valor inicial (Punto evaluación)
+    xA = 0.0
+
+    Fa = Fx.subs(x, xP)  # Función evaluada en el valor inicial
+    Fa = Fa.evalf()
+
+    Ga = Gx.subs(x, xP)  # Función G evaluada en el valor inicial
+    Ga = Ga.evalf()
+
+    datos = [[0, float(xP), float(Ga), float(Fa), None]]
+
+    try:
+        while error > Tol and i < Niter:  # Se repite hasta que el error sea menor a la tolerancia
+
+            # Se evalúa el valor inicial en G, para posteriormente evaluar este valor en la función F siendo-> Xn=G(x) y F(xn) = F(G(x))
+            Ga = Gx.subs(x, xP)  # Función G evaluada en el punto de inicial
+            xA = Ga.evalf()
+
+            Fa = Fx.subs(x, xA)  # Función evaluada en el valor de la evaluación de G
+            Fa = Fa.evalf()
+
+            error = abs(xA - xP)  # Se calcula el error
+
+            datos.append([i, float(xA), float(Ga), float(Fa), float(error)])
+
+            xP = xA  # Nuevo punto de evaluación (Punto inicial)
+            i += 1
+
+    except BaseException as e:
+        output["errors"].append("Error in data: " + str(e))
+        return output
+
+    output["results"] = datos
+    output["root"] = xA
+    return output
+
+def puntoFijoView(request):
+    datos = ()
+    if request.method == 'POST':
+        fx = request.POST["funcion-F"]
+        gx = request.POST["funcion-G"]
+
+        x0 = request.POST["vInicial"]
+        X0 = float(x0)
+
+        tol = request.POST["tolerancia"]
+        Tol = float(tol)
+
+        niter = request.POST["iteraciones"]
+        Niter = int(niter)
+
+        datos = puntoFijo(X0,Tol,Niter,fx,gx)
+        df = pd.DataFrame(datos["results"], columns=datos["columns"])
+        print(df)
+
+        x = sp.symbols('x')
+        funcion_f = sp.sympify(fx)
+        funcion_g = sp.sympify(gx)
+
+        intervalo_x = np.linspace(X0 - 5, X0 + 5, 400)  # Ajustar el intervalo si es necesario
+        fx_func = sp.lambdify(x, funcion_f, 'numpy')
+        gx_func = sp.lambdify(x, funcion_g, 'numpy')
+        intervalo_y_f = fx_func(intervalo_x)
+        intervalo_y_g = gx_func(intervalo_x)
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=intervalo_x, y=intervalo_y_f, mode='lines', name='f(x)'))
+        fig.add_trace(go.Scatter(x=intervalo_x, y=intervalo_y_g, mode='lines', name='g(x)'))
+        
+        if datos.get("root") is not None:
+            fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[0], mode='markers', name='Raíz hallada'))
+
+        fig.update_layout(title=f'Función: {fx} y {gx} en intervalo [{X0 - 5}, {X0 + 5}]',
+                          xaxis_title='x',
+                          yaxis_title='f(x) / g(x)')
+        
+        plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+
+        dataframe_to_txt(df, f'PuntoFijo {fx}')
+        plot_to_png(fig,f'PuntoFijo {fx}')
+        
+    
+    if datos:
+        context = {'df': df.to_html(), 'plot_html': plot_html}
+        return render(request, 'one_method.html', context)
+
+    return render(request, 'one_method.html')
 
 # bisection function, receives a tol, xi, xs, niter and function
 def biseccion(request):
@@ -405,6 +583,101 @@ def iterativos(request):
         except:
             context={'mensaje':'No se pudo realizar la operación'}
             return render(request,'resultado_iterativo.html',context)
+
+def interpolacion(request):
+    if request.method == 'POST':
+        metodo_interpolacion = request.POST.get('metodo_interpolacion')
+        x_values = request.POST.getlist('x[]')
+        y_values = request.POST.getlist('y[]')
+
+        # Convertir los valores de x_values y y_values a floats
+        x_floats = [float(x) for x in x_values]
+        y_floats = [float(y) for y in y_values]
+
+        if metodo_interpolacion == 'lagrange':
+            xi = x_floats
+            fi = y_floats
+
+            # PROCEDIMIENTO
+            # Polinomio de Lagrange
+            n = len(xi)
+            x = sp.Symbol('x')
+            polinomio = 0
+            divisorL = np.zeros(n, dtype=float)
+            iteraciones = []
+
+            for i in range(n):
+                numerador = 1
+                denominador = 1
+                numerador_str = ""
+                denominador_str = ""
+
+                for j in range(n):
+                    if j != i:
+                        numerador *= (x - xi[j])
+                        denominador *= (xi[i] - xi[j])
+                        numerador_str += f"(x - {xi[j]})"
+                        if denominador_str:
+                            denominador_str += "*"
+                        denominador_str += f"({xi[i]} - {xi[j]})"
+
+                terminoLi = numerador / denominador
+                polinomio += terminoLi * fi[i]
+                divisorL[i] = denominador
+
+                Li_str = f"{numerador_str} / {denominador_str}"
+                
+                # Guardar la iteración actual
+                iteraciones.append({
+                    'Iteración (i)': i,
+                    'L_i': Li_str
+                })
+
+            # Convertir iteraciones a DataFrame
+            df_iteraciones = pd.DataFrame(iteraciones)
+
+            # Simplificar el polinomio
+            polisimple = polinomio.expand()
+
+            # Para evaluación numérica
+            px = sp.lambdify(x, polisimple)
+
+            # Puntos para la gráfica
+            muestras = 101
+            a = np.min(xi)
+            b = np.max(xi)
+            pxi = np.linspace(a, b, muestras)
+            pfi = px(pxi)
+
+            # Convertir DataFrame a HTML
+            df_html = df_iteraciones.to_html(classes='table table-striped', index=False)
+            polisimple_latex = sp.latex(polisimple)
+
+            
+            mensaje = 'Polinomio de Lagrange:'
+
+            context = {
+                'polinomio': polisimple_latex,
+                'df': df_html,
+                'mensaje': mensaje
+            }
+            
+            dataframe_to_txt(df_iteraciones, f'Lagrange')
+
+            return render(request, 'one_method.html', context)
+        
+
+
+
+        elif metodo_interpolacion == 'newton':
+            pass
+
+        elif metodo_interpolacion == 'vandermonde':
+            pass
+
+    return render(request, 'one_method.html')
+
+
 
 
 

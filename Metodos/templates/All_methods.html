@@ -51,6 +51,7 @@
     <a href="#metodo5" onclick="showForm('secante')">Secante</a>
     <a href="#metodo6" onclick="showForm('raices_multiples')">Raices Multiples</a>
     <a href="#metodo7" onclick="showForm('metodos_iterativos')">Metodos iterativos</a>
+    <a href="#metodo8" onclick="showForm('interpolacion')">Interpolación</a>
     
 </div>
 
@@ -88,7 +89,7 @@
 
     <div id="regla_falsa-form" class="form-container hidden">
         <h1 id="method-title">Regla Falsa</h1>
-        <h2>Ingrese los valores de a, b, tolerancia y la función La funcion ingresela de esta manera EJM: x**3 + 7*x**2 - 60</h2>
+        <p>Ingrese los valores de a, b, tolerancia, iteraciones y la función La funcion ingresela de esta manera EJM: x**3 + 7*x**2 - 60</p>
         <form method="post" action="{% url 'regla_falsa' %}">
             {% csrf_token %}
             <label for="a_rf">Valor de a:</label>
@@ -97,6 +98,8 @@
             <input type="text" id="b_rf" name="b">
             <label for="tolerancia_rf">Tolerancia:</label>
             <input type="text" id="tolerancia_rf" name="tolerancia">
+            <label for="tolerancia_rf">Iteraciones:</label>
+            <input type="text" id="iteraciones_rf" name="iteraciones">
             <label for="funcion_rf">Función:</label>
             <input type="text" id="funcion_rf" name="funcion">
             <button type="submit">Calcular</button>
@@ -105,10 +108,18 @@
     
     <div id="punto_fijo-form" class="form-container hidden">
         <h1 id="method-title">Punto Fijo</h1>
-        <form method="post" action="#">
+        <form method="post" action="{% url 'PuntoFijo' %}">
             {% csrf_token %}
             <label for="punto_inicial">Punto inicial:</label>
-            <input type="text" id="punto_inicial" name="punto_inicial">
+            <input type="text" id="punto_inicial" name="vInicial">
+            <label for="punto_inicial">f(x):</label>
+            <input type="text" id="ff" name="funcion-F">
+            <label for="punto_inicial">g(x):</label>
+            <input type="text" id="gg" name="funcion-G">
+            <label for="punto_inicial">Tolerancia:</label>
+            <input type="text" id="gg" name="tolerancia">
+            <label for="punto_inicial">Iteraciones:</label>
+            <input type="text" id="gg" name="iteraciones">
             <button type="submit">Calcular</button>
         </form>
     </div>
@@ -167,6 +178,7 @@
             <button type="submit">Calcular</button>
         </form>
     </div>
+
     <div id="metodos_iterativos-form" class="form-container hidden">
         <h1 id="method-title">Metodos iterativos</h1>
         <p>Para garantizar la precisión y eficacia del método iterativo, es fundamental cumplir con las siguientes condiciones:<br><br>
@@ -225,6 +237,34 @@
             </table>
         </form>
     </div>
+
+    <div id="interpolacion-form" class="form-container hidden">
+        <h1 id="method-title">Interpolación</h1>
+        <form method="post" action="{% url 'interpolacion' %}">
+            {% csrf_token %}
+            <label for="metodo_interpolacion">Método de interpolación:</label>
+            <select id="metodo_interpolacion" name="metodo_interpolacion">
+                <option value="vandermonde">Vandermonde</option>
+                <option value="lagrange">Lagrange</option>
+                <option value="newton">Newton</option>
+            </select>
+            <br>
+            <table id="data-table" border="1">
+                <tr>
+                    <td>X</td>
+                    <td><input type="text" name="x[]" /></td>
+                </tr>
+                <tr>
+                    <td>Y</td>
+                    <td><input type="text" name="y[]" /></td>
+                </tr>
+            </table>
+            <button type="button" onclick="addColumn()">Agregar columna</button>
+            <button type="button" onclick="removeColumn()">Eliminar columna</button>
+            <br>
+            <button type="submit">Evaluar</button>
+        </form>
+    </div>
 </div>
 <script>
     function ismethodsor(method){
@@ -279,6 +319,28 @@
             cell.innerHTML = `<input type='number' min='-999' max='999' name='vb_cell_${i}'>`;
         }
         vectorbContainer.style.display="block";
+    }
+</script>
+<script>
+    function addColumn() {
+        var table = document.getElementById("data-table");
+        var rowCount = table.rows.length;
+        for (var i = 0; i < rowCount; i++) {
+            var row = table.rows[i];
+            var cell = row.insertCell(-1);
+            cell.innerHTML = '<input type="text" name="' + (i == 0 ? 'x[]' : 'y[]') + '" />';
+        }
+    }
+
+    function removeColumn() {
+        var table = document.getElementById("data-table");
+        var rowCount = table.rows.length;
+        if (table.rows[0].cells.length > 2) {
+            for (var i = 0; i < rowCount; i++) {
+                var row = table.rows[i];
+                row.deleteCell(-1);
+            }
+        }
     }
 </script>
 

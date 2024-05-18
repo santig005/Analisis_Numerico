@@ -12,6 +12,8 @@
         }
     </style>    
     <!-- Agrega aquí los enlaces para los estilos CSS necesarios -->
+
+    
 </head>
 <body>
 
@@ -27,6 +29,7 @@
         {{ df | safe }}
     </div>
     <h3 >{{ mensaje }}</h3>
+    <h3>{{ polinomio }}</h3>
     <div class="plot-container">
         <!-- Aquí se mostrará el gráfico de Plotly -->
         {{ plot_html | safe }}
