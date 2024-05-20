@@ -29,7 +29,9 @@ def reglaFalsaView(request):
         niter = request.POST["iteraciones"]
         Niter = int(niter)
 
-        datos = reglaFalsa(X0, Xi, Niter, Tol, fx)
+        tipo_error = request.POST.get('tipo_error')
+
+        datos = reglaFalsa(X0, Xi, Niter, Tol, fx, tipo_error)
         df = pd.DataFrame(datos["results"], columns=datos["columns"])
 
         x = sp.symbols('x')
@@ -60,12 +62,12 @@ def reglaFalsaView(request):
         plot_to_png(fig,f'ReglaFalsa {fx}')
 
     if datos:
-        context = {'df': df.to_html(), 'plot_html': plot_html}
-        return render(request, 'regla_falsa.html', context)
+        context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solucion es: {datos["root"]}'}
+        return render(request, 'one_method.html', context)
 
-    return render(request, 'regla_falsa.html')
+    return render(request, 'one_method.html')
 
-def reglaFalsa(a, b, Niter, Tol, fx):
+def reglaFalsa(a, b, Niter, Tol, fx, tipo_error):
 
     output = {
         "columns": ["iter", "a", "xm", "b", "f(xm)", "E"]
@@ -123,9 +125,15 @@ def reglaFalsa(a, b, Niter, Tol, fx):
                 Fx_3 = Fun.subs(x, xm) #Función evaluada en xm (f(xm))
                 Fx_3 = Fx_3.evalf()
 
-                error = Abs(xm-xm0)
-                er = sympify(error)
-                error = er.evalf()
+                if tipo_error == "absoluto":
+                    error = Abs(xm-xm0)
+                    er = sympify(error)
+                    error = er.evalf()
+                else:
+                    error = Abs(xm-xm0)/xm
+                    er = sympify(error)
+                    error = er.evalf()
+
                 datos.append([i, '{:^15.7f}'.format(a), '{:^15.7f}'.format(xm), '{:^15.7f}'.format(b), '{:^15.7E}'.format(Fx_3), '{:^15.7E}'.format(error)])
             i += 1
     except BaseException as e:
@@ -142,7 +150,7 @@ def reglaFalsa(a, b, Niter, Tol, fx):
     return output
 
 
-def puntoFijo(X0, Tol, Niter, fx, gx):
+def puntoFijo(X0, Tol, Niter, fx, gx, tipo_error):
 
     output = {
         "columns": ["iter", "xi", "g(xi)", "f(xi)", "E"],
@@ -180,7 +188,11 @@ def puntoFijo(X0, Tol, Niter, fx, gx):
             Fa = Fx.subs(x, xA)  # Función evaluada en el valor de la evaluación de G
             Fa = Fa.evalf()
 
-            error = abs(xA - xP)  # Se calcula el error
+            if tipo_error == "absoluto":
+                error = abs(xA - xP)
+            else:
+                error = abs(xA - xP) / abs(xA)
+                
 
             datos.append([i, float(xA), float(Ga), float(Fa), float(error)])
 
@@ -210,9 +222,10 @@ def puntoFijoView(request):
         niter = request.POST["iteraciones"]
         Niter = int(niter)
 
-        datos = puntoFijo(X0,Tol,Niter,fx,gx)
+        tipo_error = request.POST.get('tipo_error')
+
+        datos = puntoFijo(X0,Tol,Niter,fx,gx, tipo_error)
         df = pd.DataFrame(datos["results"], columns=datos["columns"])
-        print(df)
 
         x = sp.symbols('x')
         funcion_f = sp.sympify(fx)
@@ -242,7 +255,7 @@ def puntoFijoView(request):
         
     
     if datos:
-        context = {'df': df.to_html(), 'plot_html': plot_html}
+        context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solucion es: {datos["root"]}'}
         return render(request, 'one_method.html', context)
 
     return render(request, 'one_method.html')
