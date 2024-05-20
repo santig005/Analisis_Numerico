@@ -357,7 +357,6 @@ def biseccion(request):
             else:
                 mensaje+="No hay raiz en el intervalo, intente con otro intervalo"
             
-
             columnas = ['xi', 'xm','xs','f(xi)' ,'f(xm)','f(xs)', 'Err abs ', 'Err Rel']
             df = pd.DataFrame(tabla, columns=columnas)
             df.index = np.arange(1, len(df) + 1)
@@ -665,7 +664,6 @@ def interpolacion(request):
             dataframe_to_txt(df_iteraciones, f'Lagrange')
 
             return render(request, 'one_method.html', context)
-        
 
 
 
@@ -673,7 +671,56 @@ def interpolacion(request):
             pass
 
         elif metodo_interpolacion == 'vandermonde':
-            pass
+            xi = x_floats
+            fi = y_floats
+
+            # PROCEDIMIENTO
+            # Polinomio de Lagrange
+            n = len(xi)
+            x = sp.Symbol('x')
+            matriz_A=[]
+            for i in range(n):
+                grado=n-1
+                fila=[]
+                for j in range(grado,-1,-1):
+                    fila.append(xi[i]**grado)
+                    grado-=1
+                matriz_A.append(fila)
+            vector_b=fi
+            nmatriz_A=np.array(matriz_A)
+            nvectorb = np.array(vector_b).reshape(-1, 1)
+            nvectora =  np.linalg.inv(nmatriz_A) @ nvectorb
+            pol="El polinomio resultante es: "
+            grado=n-1
+            for i in range(n):
+                pol+=str(nvectora[i][0])
+                if i<n-1:
+                    if grado>0:
+                        pol+="x**"+str(grado)
+                    if(nvectora[i+1][0]>=0):
+                        pol+="+"
+                grado-=1
+                
+            
+            mA_html = pd.DataFrame(nmatriz_A).to_html()
+            vb_html = pd.DataFrame(nvectorb).to_html()
+            va_html = pd.DataFrame(nvectora).to_html()
+
+            mensaje="Se logro dar con una solucion"
+            context = {
+                'vandermonde':True,
+                'ma':mA_html,
+                'vb':vb_html,
+                'va':va_html,
+                'polinomio': pol,
+                'nombre_metodo': "Vandermonde",
+                'mensaje': mensaje
+            }
+            return render(request, 'one_method.html', context)
+
+            
+
+
 
     return render(request, 'one_method.html')
 
