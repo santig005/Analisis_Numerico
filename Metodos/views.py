@@ -73,7 +73,6 @@ def reglaFalsa(a, b, Niter, Tol, fx, tipo_error):
         "columns": ["iter", "a", "xm", "b", "f(xm)", "E"]
     }
 
-    #configuración inicial
     datos = list()
     x = sp.Symbol('x')
     i = 1
