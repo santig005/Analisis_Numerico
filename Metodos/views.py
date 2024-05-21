@@ -7,7 +7,7 @@ from django.utils.safestring import mark_safe
 import plotly.graph_objects as go
 from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi,metodo_sor
 from .utiles.saver import dataframe_to_txt,plot_to_png
-
+from .utiles.plotter import plot_fx_puntos
 def home(request):
     return render(request, 'All_methods.html')
 
@@ -284,6 +284,10 @@ def biseccion(request):
         tol = (request.POST['tol'])
         niter = (request.POST['niter'])
         funcion = request.POST['funcion']
+        print("la funcion es ")
+        print("es de ")
+        print(type(funcion))
+        print(funcion)
         tipo_error = request.POST.get('tipo_error')
         if xi is None or xs is None or tol is None or niter is None or funcion is None or tipo_error is None:
             xi = 1
@@ -714,8 +718,6 @@ def interpolacion(request):
 
             elif metodo_interpolacion == 'vandermonde':
                 try:
-                    # PROCEDIMIENTO
-                    # Polinomio de Vandermonde
                     x = sp.Symbol('x')
                     matriz_A = []
                     for i in range(n):
@@ -728,22 +730,27 @@ def interpolacion(request):
                     vector_b = fi
                     nmatriz_A = np.array(matriz_A)
                     nvectorb = np.array(vector_b).reshape(-1, 1)
+                    print(nvectorb)
                     nvectora = np.linalg.inv(nmatriz_A) @ nvectorb
-                    pol = "El polinomio resultante es: "
+                    pol = ""
                     grado = n - 1
                     for i in range(n):
-                        pol += str(nvectora[i][0])
+                        pol +=str(nvectora[i][0])
                         if i < n - 1:
                             if grado > 0:
-                                pol += "x**" + str(grado)
+                                pol += "*x**" + str(grado)
                             if (nvectora[i + 1][0] >= 0):
                                 pol += "+"
                         grado -= 1
+
 
                     mA_html = pd.DataFrame(nmatriz_A).to_html()
                     vb_html = pd.DataFrame(nvectorb).to_html()
                     va_html = pd.DataFrame(nvectora).to_html()
 
+                    fig=plot_fx_puntos(pol,xi[0],xi[-1],xi,fi,'punto dado')
+                    plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+                    
                     mensaje = "Se logro dar con una solucion"
                     context = {
                         'vandermonde': True,
@@ -752,7 +759,8 @@ def interpolacion(request):
                         'va': va_html,
                         'polinomio': pol,
                         'nombre_metodo': "Vandermonde",
-                        'mensaje': mensaje
+                        'mensaje': mensaje,
+                        'plot_html': plot_html
                     }
                     return render(request, 'one_method.html', context)
                 except Exception as e:
