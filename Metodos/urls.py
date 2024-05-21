@@ -9,4 +9,5 @@ urlpatterns = [
     path('secante/', views.secante, name='secante'),
     path('iterativos/',views.iterativos,name="iterativos"),
     path('Interpolacion/',views.interpolacion,name="interpolacion"),
+
 ]

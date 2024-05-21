@@ -15,55 +15,62 @@ def home(request):
 def reglaFalsaView(request):
     datos = ()
     if request.method == 'POST':
-        fx = request.POST["funcion"]
+        try:
+            fx = request.POST["funcion"]
 
-        x0 = request.POST["a"]
-        X0 = float(x0)
+            x0 = request.POST["a"]
+            X0 = float(x0)
 
-        xi = request.POST["b"]
-        Xi = float(xi)
+            xi = request.POST["b"]
+            Xi = float(xi)
 
-        tol = request.POST["tolerancia"]
-        Tol = float(tol)
+            tol = request.POST["tolerancia"]
+            Tol = float(tol)
 
-        niter = request.POST["iteraciones"]
-        Niter = int(niter)
+            niter = request.POST["iteraciones"]
+            Niter = int(niter)
 
-        tipo_error = request.POST.get('tipo_error')
+            tipo_error = request.POST.get('tipo_error')
 
-        datos = reglaFalsa(X0, Xi, Niter, Tol, fx, tipo_error)
-        df = pd.DataFrame(datos["results"], columns=datos["columns"])
+            datos = reglaFalsa(X0, Xi, Niter, Tol, fx, tipo_error)
+            df = pd.DataFrame(datos["results"], columns=datos["columns"])
 
-        x = sp.symbols('x')
-        funcion_expr = sp.sympify(fx)
-        
-        xi_copy = X0
-        xs_copy = Xi
-        
-        intervalo_x = np.arange(xi_copy, xs_copy, 0.1)
-        fx_func = sp.lambdify(x, funcion_expr, 'numpy')
-        intervalo_y = fx_func(intervalo_x)
-        intervalo_x_completo = np.arange(xi_copy, xs_copy, 0.1)
-        intervalo_y_completo = fx_func(intervalo_x_completo)
-        
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
-        
-        if datos.get("root") is not None:
-            fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[float(0)], mode='markers', name='Raíz hallada'))
-        
-        fig.update_layout(title=f'Función: {fx} en intervalo [{xi_copy}, {xs_copy}]',
-                          xaxis_title='x',
-                          yaxis_title='f(x)')
-        
-        plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+            x = sp.symbols('x')
+            funcion_expr = sp.sympify(fx)
 
-        dataframe_to_txt(df, f'ReglaFalsa {fx}')
-        plot_to_png(fig,f'ReglaFalsa {fx}')
+            xi_copy = X0
+            xs_copy = Xi
 
-    if datos:
-        context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solucion es: {datos["root"]}'}
-        return render(request, 'one_method.html', context)
+            intervalo_x = np.arange(xi_copy, xs_copy, 0.1)
+            fx_func = sp.lambdify(x, funcion_expr, 'numpy')
+            intervalo_y = fx_func(intervalo_x)
+            intervalo_x_completo = np.arange(xi_copy, xs_copy, 0.1)
+            intervalo_y_completo = fx_func(intervalo_x_completo)
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
+
+            if datos.get("root") is not None:
+                fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[float(0)], mode='markers', name='Raíz hallada'))
+
+            fig.update_layout(title=f'Función: {fx} en intervalo [{xi_copy}, {xs_copy}]',
+                              xaxis_title='x',
+                              yaxis_title='f(x)')
+
+            plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+
+            dataframe_to_txt(df, f'ReglaFalsa {fx}')
+            plot_to_png(fig, f'ReglaFalsa {fx}')
+
+            if datos:
+                context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solucion es: {datos["root"]}'}
+                return render(request, 'one_method.html', context)
+
+            return render(request, 'one_method.html')
+
+        except Exception as e:
+            context = {'error_message': f'Hubo un error en el metodo Regla Falsa en: {str(e)}'}
+            return render(request, 'error.html', context)
 
     return render(request, 'one_method.html')
 
@@ -209,55 +216,63 @@ def puntoFijo(X0, Tol, Niter, fx, gx, tipo_error):
 def puntoFijoView(request):
     datos = ()
     if request.method == 'POST':
-        fx = request.POST["funcion-F"]
-        gx = request.POST["funcion-G"]
+        try:
+            fx = request.POST["funcion-F"]
+            gx = request.POST["funcion-G"]
 
-        x0 = request.POST["vInicial"]
-        X0 = float(x0)
+            x0 = request.POST["vInicial"]
+            X0 = float(x0)
 
-        tol = request.POST["tolerancia"]
-        Tol = float(tol)
+            tol = request.POST["tolerancia"]
+            Tol = float(tol)
 
-        niter = request.POST["iteraciones"]
-        Niter = int(niter)
+            niter = request.POST["iteraciones"]
+            Niter = int(niter)
 
-        tipo_error = request.POST.get('tipo_error')
+            tipo_error = request.POST.get('tipo_error')
 
-        datos = puntoFijo(X0,Tol,Niter,fx,gx, tipo_error)
-        df = pd.DataFrame(datos["results"], columns=datos["columns"])
+            datos = puntoFijo(X0,Tol,Niter,fx,gx, tipo_error)
+            df = pd.DataFrame(datos["results"], columns=datos["columns"])
 
-        x = sp.symbols('x')
-        funcion_f = sp.sympify(fx)
-        funcion_g = sp.sympify(gx)
+            x = sp.symbols('x')
+            funcion_f = sp.sympify(fx)
+            funcion_g = sp.sympify(gx)
 
-        intervalo_x = np.linspace(X0 - 5, X0 + 5, 400)  # Ajustar el intervalo si es necesario
-        fx_func = sp.lambdify(x, funcion_f, 'numpy')
-        gx_func = sp.lambdify(x, funcion_g, 'numpy')
-        intervalo_y_f = fx_func(intervalo_x)
-        intervalo_y_g = gx_func(intervalo_x)
+            intervalo_x = np.linspace(X0 - 5, X0 + 5, 400)  # Ajustar el intervalo si es necesario
+            fx_func = sp.lambdify(x, funcion_f, 'numpy')
+            gx_func = sp.lambdify(x, funcion_g, 'numpy')
+            intervalo_y_f = fx_func(intervalo_x)
+            intervalo_y_g = gx_func(intervalo_x)
 
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=intervalo_x, y=intervalo_y_f, mode='lines', name='f(x)'))
-        fig.add_trace(go.Scatter(x=intervalo_x, y=intervalo_y_g, mode='lines', name='g(x)'))
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=intervalo_x, y=intervalo_y_f, mode='lines', name='f(x)'))
+            fig.add_trace(go.Scatter(x=intervalo_x, y=intervalo_y_g, mode='lines', name='g(x)'))
+            
+            if datos.get("root") is not None:
+                fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[0], mode='markers', name='Raíz hallada'))
+
+            fig.update_layout(title=f'Función: {fx} y {gx} en intervalo [{X0 - 5}, {X0 + 5}]',
+                            xaxis_title='x',
+                            yaxis_title='f(x) / g(x)')
+            
+            plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+
+            dataframe_to_txt(df, f'PuntoFijo {fx}')
+            plot_to_png(fig,f'PuntoFijo {fx}')
+            
         
-        if datos.get("root") is not None:
-            fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[0], mode='markers', name='Raíz hallada'))
+            if datos:
+                context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solucion es: {datos["root"]}'}
+                return render(request, 'one_method.html', context)
 
-        fig.update_layout(title=f'Función: {fx} y {gx} en intervalo [{X0 - 5}, {X0 + 5}]',
-                          xaxis_title='x',
-                          yaxis_title='f(x) / g(x)')
+            return render(request, 'one_method.html')
         
-        plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
-
-        dataframe_to_txt(df, f'PuntoFijo {fx}')
-        plot_to_png(fig,f'PuntoFijo {fx}')
-        
-    
-    if datos:
-        context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solucion es: {datos["root"]}'}
-        return render(request, 'one_method.html', context)
+        except Exception as e:
+            context = {'error_message': f'Hubo un error en el metodo Punto Fijo en: {str(e)}'}
+            return render(request, 'error.html', context)
 
     return render(request, 'one_method.html')
+            
 
 # bisection function, receives a tol, xi, xs, niter and function
 def biseccion(request):
@@ -595,146 +610,159 @@ def iterativos(request):
             context={'mensaje':'No se pudo realizar la operación'}
             return render(request,'resultado_iterativo.html',context)
 
+from django.shortcuts import render
+import numpy as np
+import pandas as pd
+import sympy as sp
+from .utiles.saver import dataframe_to_txt
+
 def interpolacion(request):
     if request.method == 'POST':
-        metodo_interpolacion = request.POST.get('metodo_interpolacion')
-        x_values = request.POST.getlist('x[]')
-        y_values = request.POST.getlist('y[]')
+        try:
+            metodo_interpolacion = request.POST.get('metodo_interpolacion')
+            x_values = request.POST.getlist('x[]')
+            y_values = request.POST.getlist('y[]')
 
-        # Convertir los valores de x_values y y_values a floats
-        x_floats = [float(x) for x in x_values]
-        y_floats = [float(y) for y in y_values]
+            # Convertir los valores de x_values y y_values a floats
+            x_floats = [float(x) for x in x_values]
+            y_floats = [float(y) for y in y_values]
 
-        if metodo_interpolacion == 'lagrange':
-            xi = x_floats
-            fi = y_floats
+            if metodo_interpolacion == 'lagrange':
+                try:
+                    xi = x_floats
+                    fi = y_floats
 
-            # PROCEDIMIENTO
-            # Polinomio de Lagrange
-            n = len(xi)
-            x = sp.Symbol('x')
-            polinomio = 0
-            divisorL = np.zeros(n, dtype=float)
-            iteraciones = []
+                    # PROCEDIMIENTO
+                    # Polinomio de Lagrange
+                    n = len(xi)
+                    x = sp.Symbol('x')
+                    polinomio = 0
+                    divisorL = np.zeros(n, dtype=float)
+                    iteraciones = []
 
-            for i in range(n):
-                numerador = 1
-                denominador = 1
-                numerador_str = ""
-                denominador_str = ""
+                    for i in range(n):
+                        numerador = 1
+                        denominador = 1
+                        numerador_str = ""
+                        denominador_str = ""
 
-                for j in range(n):
-                    if j != i:
-                        numerador *= (x - xi[j])
-                        denominador *= (xi[i] - xi[j])
-                        numerador_str += f"(x - {xi[j]})"
-                        if denominador_str:
-                            denominador_str += "*"
-                        denominador_str += f"({xi[i]} - {xi[j]})"
+                        for j in range(n):
+                            if j != i:
+                                numerador *= (x - xi[j])
+                                denominador *= (xi[i] - xi[j])
+                                numerador_str += f"(x - {xi[j]})"
+                                if denominador_str:
+                                    denominador_str += "*"
+                                denominador_str += f"({xi[i]} - {xi[j]})"
 
-                terminoLi = numerador / denominador
-                polinomio += terminoLi * fi[i]
-                divisorL[i] = denominador
+                        terminoLi = numerador / denominador
+                        polinomio += terminoLi * fi[i]
+                        divisorL[i] = denominador
 
-                Li_str = f"{numerador_str} / {denominador_str}"
-                
-                # Guardar la iteración actual
-                iteraciones.append({
-                    'Iteración (i)': i,
-                    'L_i': Li_str
-                })
+                        Li_str = f"{numerador_str} / {denominador_str}"
+                        
+                        # Guardar la iteración actual
+                        iteraciones.append({
+                            'Iteración (i)': i,
+                            'L_i': Li_str
+                        })
 
-            # Convertir iteraciones a DataFrame
-            df_iteraciones = pd.DataFrame(iteraciones)
+                    # Convertir iteraciones a DataFrame
+                    df_iteraciones = pd.DataFrame(iteraciones)
 
-            # Simplificar el polinomio
-            polisimple = polinomio.expand()
+                    # Simplificar el polinomio
+                    polisimple = polinomio.expand()
 
-            # Para evaluación numérica
-            px = sp.lambdify(x, polisimple)
+                    # Para evaluación numérica
+                    px = sp.lambdify(x, polisimple)
 
-            # Puntos para la gráfica
-            muestras = 101
-            a = np.min(xi)
-            b = np.max(xi)
-            pxi = np.linspace(a, b, muestras)
-            pfi = px(pxi)
+                    # Puntos para la gráfica
+                    muestras = 101
+                    a = np.min(xi)
+                    b = np.max(xi)
+                    pxi = np.linspace(a, b, muestras)
+                    pfi = px(pxi)
 
-            # Convertir DataFrame a HTML
-            df_html = df_iteraciones.to_html(classes='table table-striped', index=False)
-            polisimple_latex = sp.latex(polisimple)
+                    # Convertir DataFrame a HTML
+                    df_html = df_iteraciones.to_html(classes='table table-striped', index=False)
+                    polisimple_latex = sp.latex(polisimple)
 
-            
-            mensaje = 'Polinomio de Lagrange:'
+                    mensaje = 'Polinomio de Lagrange:'
 
-            context = {
-                'polinomio': polisimple_latex,
-                'df': df_html,
-                'mensaje': mensaje
-            }
-            
-            dataframe_to_txt(df_iteraciones, f'Lagrange')
+                    context = {
+                        'polinomio': polisimple_latex,
+                        'df': df_html,
+                        'mensaje': mensaje
+                    }
 
-            return render(request, 'one_method.html', context)
+                    dataframe_to_txt(df_iteraciones, f'Lagrange')
 
+                    return render(request, 'one_method.html', context)
+                except Exception as e:
+                    context = {'error_message': f'Hubo un error con lagrange en: {str(e)}'}
+                    return render(request, 'error.html', context)
 
+            elif metodo_interpolacion == 'newton':
+                # Implementar método de Newton aquí
+                pass
 
-        elif metodo_interpolacion == 'newton':
-            pass
+            elif metodo_interpolacion == 'vandermonde':
+                try:
+                    xi = x_floats
+                    fi = y_floats
 
-        elif metodo_interpolacion == 'vandermonde':
-            xi = x_floats
-            fi = y_floats
+                    # PROCEDIMIENTO
+                    # Polinomio de Vandermonde
+                    n = len(xi)
+                    x = sp.Symbol('x')
+                    matriz_A = []
+                    for i in range(n):
+                        grado = n - 1
+                        fila = []
+                        for j in range(grado, -1, -1):
+                            fila.append(xi[i] ** grado)
+                            grado -= 1
+                        matriz_A.append(fila)
+                    vector_b = fi
+                    nmatriz_A = np.array(matriz_A)
+                    nvectorb = np.array(vector_b).reshape(-1, 1)
+                    nvectora = np.linalg.inv(nmatriz_A) @ nvectorb
+                    pol = "El polinomio resultante es: "
+                    grado = n - 1
+                    for i in range(n):
+                        pol += str(nvectora[i][0])
+                        if i < n - 1:
+                            if grado > 0:
+                                pol += "x**" + str(grado)
+                            if (nvectora[i + 1][0] >= 0):
+                                pol += "+"
+                        grado -= 1
 
-            # PROCEDIMIENTO
-            # Polinomio de Lagrange
-            n = len(xi)
-            x = sp.Symbol('x')
-            matriz_A=[]
-            for i in range(n):
-                grado=n-1
-                fila=[]
-                for j in range(grado,-1,-1):
-                    fila.append(xi[i]**grado)
-                    grado-=1
-                matriz_A.append(fila)
-            vector_b=fi
-            nmatriz_A=np.array(matriz_A)
-            nvectorb = np.array(vector_b).reshape(-1, 1)
-            nvectora =  np.linalg.inv(nmatriz_A) @ nvectorb
-            pol="El polinomio resultante es: "
-            grado=n-1
-            for i in range(n):
-                pol+=str(nvectora[i][0])
-                if i<n-1:
-                    if grado>0:
-                        pol+="x**"+str(grado)
-                    if(nvectora[i+1][0]>=0):
-                        pol+="+"
-                grado-=1
-                
-            
-            mA_html = pd.DataFrame(nmatriz_A).to_html()
-            vb_html = pd.DataFrame(nvectorb).to_html()
-            va_html = pd.DataFrame(nvectora).to_html()
+                    mA_html = pd.DataFrame(nmatriz_A).to_html()
+                    vb_html = pd.DataFrame(nvectorb).to_html()
+                    va_html = pd.DataFrame(nvectora).to_html()
 
-            mensaje="Se logro dar con una solucion"
-            context = {
-                'vandermonde':True,
-                'ma':mA_html,
-                'vb':vb_html,
-                'va':va_html,
-                'polinomio': pol,
-                'nombre_metodo': "Vandermonde",
-                'mensaje': mensaje
-            }
-            return render(request, 'one_method.html', context)
-
-            
-
-
+                    mensaje = "Se logro dar con una solucion"
+                    context = {
+                        'vandermonde': True,
+                        'ma': mA_html,
+                        'vb': vb_html,
+                        'va': va_html,
+                        'polinomio': pol,
+                        'nombre_metodo': "Vandermonde",
+                        'mensaje': mensaje
+                    }
+                    return render(request, 'one_method.html', context)
+                except Exception as e:
+                    context = {'error_message': f'Hubo un error con vandermonde: {str(e)}'}
+                    return render(request, 'error.html', context)
+        
+        except Exception as e:
+            context = {'error_message': f'An unexpected error occurred: {str(e)}'}
+            return render(request, 'error.html', context)
 
     return render(request, 'one_method.html')
+
 
 
 
