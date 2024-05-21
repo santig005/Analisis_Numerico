@@ -80,6 +80,7 @@ def reglaFalsa(a, b, Niter, Tol, fx, tipo_error):
         "columns": ["iter", "a", "xm", "b", "f(xm)", "E"]
     }
 
+    #configuración inicial
     datos = list()
     x = sp.Symbol('x')
     i = 1
@@ -627,14 +628,19 @@ def interpolacion(request):
             x_floats = [float(x) for x in x_values]
             y_floats = [float(y) for y in y_values]
 
+            xi = x_floats
+            fi = y_floats
+
+            n = len(xi)
+            if n<=1:
+                context = {'error_message': f'Se deben ingresar 2 puntos o más'}
+                return render(request, 'error.html', context)
+
             if metodo_interpolacion == 'lagrange':
                 try:
-                    xi = x_floats
-                    fi = y_floats
-
                     # PROCEDIMIENTO
                     # Polinomio de Lagrange
-                    n = len(xi)
+                    
                     x = sp.Symbol('x')
                     polinomio = 0
                     divisorL = np.zeros(n, dtype=float)
@@ -708,12 +714,8 @@ def interpolacion(request):
 
             elif metodo_interpolacion == 'vandermonde':
                 try:
-                    xi = x_floats
-                    fi = y_floats
-
                     # PROCEDIMIENTO
                     # Polinomio de Vandermonde
-                    n = len(xi)
                     x = sp.Symbol('x')
                     matriz_A = []
                     for i in range(n):
@@ -758,7 +760,7 @@ def interpolacion(request):
                     return render(request, 'error.html', context)
         
         except Exception as e:
-            context = {'error_message': f'An unexpected error occurred: {str(e)}'}
+            context = {'error_message': f'Ocurrió un error en la obtención de los datos, llene todos los campos bien, numeros enteros o decimales'}
             return render(request, 'error.html', context)
 
     return render(request, 'one_method.html')
