@@ -23,7 +23,56 @@
 
 <div class="content">
     <h1>{{nombre_metodo}}</h1>
-    
+    {% if vandermonde %}
+    <table>
+        <tr>
+            <td>
+                <div>
+                    <h2>A (Vandermonde)</h2>
+                        <!-- Matrix entries will be dynamically added here -->
+                        <div style="display: flex;
+                        justify-content: center;
+                        margin-bottom: 20px;">
+                            {{ma | safe}}
+                        </div>
+                </div>
+            </td>
+            <td>
+                <div>
+                    <h2>x</h2>
+                </div>
+            </td>
+            <td>
+                <div>
+                    <h2>x(variables)</h2>
+                        <!-- Matrix entries will be dynamically added here -->
+                    <div style="display: flex;
+                    justify-content: center;
+                    margin-bottom: 20px;">
+                        {{va | safe}}
+                    </div>
+                        
+                </div>
+            </td>
+            <td>
+                <div>
+                    <h2>=</h2>
+                </div>
+            </td>
+            <td>
+                <div>
+                    <h2>b (solucion)</h2>
+                        <!-- Matrix entries will be dynamically added here -->
+                        <div style="display: flex;
+                        justify-content: center;
+                        margin-bottom: 20px;">
+                            {{vb | safe}}
+                        </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    {% endif %}
     <div class="result-container">
         <!-- Aquí se mostrará la tabla generada -->
         {{ df | safe }}
