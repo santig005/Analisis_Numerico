@@ -6,8 +6,8 @@ from sympy import *
 from django.utils.safestring import mark_safe
 import plotly.graph_objects as go
 from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi,metodo_sor
-from .utiles.saver import dataframe_to_txt,plot_to_png
-from .utiles.plotter import plot_fx_puntos
+from .utiles.saver import dataframe_to_txt,plot_to_png,text_to_txt
+from .utiles.plotter import plot_fx_puntos,fx_plot
 def home(request):
     return render(request, 'All_methods.html')
 
@@ -284,10 +284,6 @@ def biseccion(request):
         tol = (request.POST['tol'])
         niter = (request.POST['niter'])
         funcion = request.POST['funcion']
-        print("la funcion es ")
-        print("es de ")
-        print(type(funcion))
-        print(funcion)
         tipo_error = request.POST.get('tipo_error')
         if xi is None or xs is None or tol is None or niter is None or funcion is None or tipo_error is None:
             xi = 1
@@ -393,25 +389,10 @@ def biseccion(request):
             df = pd.DataFrame(tabla, columns=columnas)
             df.index = np.arange(1, len(df) + 1)
             
-            
-            intervalo_x = np.arange(xi_copy, xs_copy,0.1)
-            fx = sp.lambdify(x, funcion_expr, 'numpy')
-            intervalo_y = fx(intervalo_x)
-            intervalo_x_completo = np.arange(xi_copy, xs_copy,0.1)
-            intervalo_y_completo = fx(intervalo_x_completo)
-            
-            # Crear figura
-
-
-            fig = go.Figure()
-            
-            fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
             if hay_solucion:
-                fig.add_trace(go.Scatter(x=[str(solucion)], y=[str(fsolucion)], mode='markers', name='Raíz hallada'))
-            fig.update_layout(title=f'Función: {funcion} en intervalo [{xi_copy}, {xs_copy}]',
-                            xaxis_title='x',
-                            yaxis_title='f(x)')
-            
+                fig=plot_fx_puntos(funcion,xi_copy,xs_copy,[str(solucion)],[str(fsolucion)],'raíz hallada')
+            else:
+                fig=fx_plot(funcion,xi_copy,xs_copy)
             plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
             dataframe_to_txt(df,"biseccion")
             plot_to_png(fig,"biseccion")
@@ -540,20 +521,10 @@ def secante(request):
 
             columnas = ['i','xi-1', 'xi', 'xi+1', 'f(xi-1)', 'f(xi)', 'f(xi+1)','Err abs', 'Err Rel']
             df = pd.DataFrame(tabla, columns=columnas)
-            intervalo_x = np.arange(xi_copy, xs_copy,0.1)
-            fx = sp.lambdify(x, funcion_expr, 'numpy')
-            intervalo_y = fx(intervalo_x)
-            intervalo_x_completo = np.arange(xi_copy, xs_copy,0.1)
-            intervalo_y_completo = fx(intervalo_x_completo)
-            
-            # Crear figura
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
             if hay_solucion:
-                fig.add_trace(go.Scatter(x=[str(solucion)], y=[str(fsolucion)], mode='markers', name='Raíz hallada'))
-            fig.update_layout(title=f'Función: {funcion} en intervalo [{xi_copy}, {xs_copy}]',
-                            xaxis_title='x',
-                            yaxis_title='f(x)')
+                fig=plot_fx_puntos(funcion,xi_copy,xs_copy,[str(solucion)],[str(fsolucion)],'raíz hallada')
+            else:
+                fig=fx_plot(funcion,xi_copy,xs_copy)
             
             plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
             dataframe_to_txt(df,"secante")
@@ -730,7 +701,6 @@ def interpolacion(request):
                     vector_b = fi
                     nmatriz_A = np.array(matriz_A)
                     nvectorb = np.array(vector_b).reshape(-1, 1)
-                    print(nvectorb)
                     nvectora = np.linalg.inv(nmatriz_A) @ nvectorb
                     pol = ""
                     grado = n - 1
@@ -750,6 +720,8 @@ def interpolacion(request):
 
                     fig=plot_fx_puntos(pol,xi[0],xi[-1],xi,fi,'punto dado')
                     plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+                    plot_to_png(fig,"vandermonde")
+                    text_to_txt(pol,"vandermonde_pol")
                     
                     mensaje = "Se logro dar con una solucion"
                     context = {
