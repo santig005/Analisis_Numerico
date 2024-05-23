@@ -8,33 +8,42 @@ import plotly.graph_objects as go
 from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi,metodo_sor
 from .utiles.saver import dataframe_to_txt,plot_to_png
 
+
 def home(request):
     return render(request, 'All_methods.html')
 
 
+
 def reglaFalsaView(request):
-    datos = ()
+    context = {}
+    
     if request.method == 'POST':
-        try:
-            fx = request.POST["funcion"]
+        
+        fx = request.POST["funcion"]
 
-            x0 = request.POST["a"]
-            X0 = float(x0)
+        x0 = request.POST["a"]
+        X0 = float(x0)
 
-            xi = request.POST["b"]
-            Xi = float(xi)
+        xi = request.POST["b"]
+        Xi = float(xi)
 
-            tol = request.POST["tolerancia"]
-            Tol = float(tol)
+        tol = request.POST["tolerancia"]
+        Tol = float(tol)
 
-            niter = request.POST["iteraciones"]
-            Niter = int(niter)
+        niter = request.POST["iteraciones"]
+        Niter = int(niter)
 
-            tipo_error = request.POST.get('tipo_error')
+        tipo_error = request.POST.get('tipo_error')
+        
+        datos = reglaFalsa(X0, Xi, Niter, Tol, fx, tipo_error)
 
-            datos = reglaFalsa(X0, Xi, Niter, Tol, fx, tipo_error)
+        if "errors" in datos and datos["errors"]:
+            context['error_message'] = f'Hubo un error en el metodo Regla Falsa en: {datos["errors"]}'
+            return render(request, 'error.html', context)
+        
+        if "results" in datos:
             df = pd.DataFrame(datos["results"], columns=datos["columns"])
-
+            
             x = sp.symbols('x')
             funcion_expr = sp.sympify(fx)
 
@@ -54,30 +63,22 @@ def reglaFalsaView(request):
                 fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[float(0)], mode='markers', name='Raíz hallada'))
 
             fig.update_layout(title=f'Función: {fx} en intervalo [{xi_copy}, {xs_copy}]',
-                              xaxis_title='x',
-                              yaxis_title='f(x)')
+                                xaxis_title='x',
+                                yaxis_title='f(x)')
 
             plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+            
+            context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solución es: {datos["root"]}'}
 
-            dataframe_to_txt(df, f'ReglaFalsa {fx}')
-            plot_to_png(fig, f'ReglaFalsa {fx}')
-
-            if datos:
-                context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solucion es: {datos["root"]}'}
-                return render(request, 'one_method.html', context)
-
-            return render(request, 'one_method.html')
-
-        except Exception as e:
-            context = {'error_message': f'Hubo un error en el metodo Regla Falsa en: {str(e)}'}
-            return render(request, 'error.html', context)
-
-    return render(request, 'one_method.html')
+    return render(request, 'one_method.html', context)
 
 def reglaFalsa(a, b, Niter, Tol, fx, tipo_error):
 
     output = {
-        "columns": ["iter", "a", "xm", "b", "f(xm)", "E"]
+        "columns": ["iter", "a", "xm", "b", "f(xm)", "E"],
+        "results": [],
+        "errors": [],
+        'root': '0'
     }
 
     datos = list()
@@ -87,7 +88,7 @@ def reglaFalsa(a, b, Niter, Tol, fx, tipo_error):
     error = 1.0000000
 
     Fun = sympify(fx)
-
+   
     xm = 0
     xm0 = 0
     Fx_2 = 0
@@ -96,6 +97,9 @@ def reglaFalsa(a, b, Niter, Tol, fx, tipo_error):
     Fb = 0
 
     try:
+        if Fun.subs(x, a)*Fun.subs(x, b) > 0:
+            output["errors"].append("La funcion no cambia de signo en el intervalo dado")
+            return output
         while (error > cond) and (i < Niter):
             if i == 1:
                 Fx_2 = Fun.subs(x, a)
@@ -632,6 +636,18 @@ def interpolacion(request):
                     xi = x_floats
                     fi = y_floats
 
+                    dicts = {}
+                    for i in range(len(xi)):
+                        dicts[xi[i]] = fi[i]
+
+                    
+                    dic = {k: dicts[k] for k in sorted(dicts)}
+
+                    xi = list(dic.keys())
+                    fi = list(dic.values())
+
+                    
+
                     # PROCEDIMIENTO
                     # Polinomio de Lagrange
                     n = len(xi)
@@ -663,25 +679,40 @@ def interpolacion(request):
                         
                         # Guardar la iteración actual
                         iteraciones.append({
-                            'Iteración (i)': i,
+                            'i': i,
                             'L_i': Li_str
                         })
 
                     # Convertir iteraciones a DataFrame
                     df_iteraciones = pd.DataFrame(iteraciones)
 
-                    # Simplificar el polinomio
                     polisimple = polinomio.expand()
 
-                    # Para evaluación numérica
-                    px = sp.lambdify(x, polisimple)
-
                     # Puntos para la gráfica
-                    muestras = 101
                     a = np.min(xi)
                     b = np.max(xi)
-                    pxi = np.linspace(a, b, muestras)
-                    pfi = px(pxi)
+
+                    # Crear la función lambda para el polinomio simplificado
+                    px = sp.lambdify(x, polisimple, 'numpy')
+
+                    # Intervalo de valores para la gráfica
+                    intervalo_x_completo = np.arange(a, b, 0.1)
+                    intervalo_y_completo = px(intervalo_x_completo)
+
+                    # Crear la gráfica
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
+
+                    # Configurar el diseño de la gráfica
+                    fig.update_layout(title=f'Función: {polisimple}',
+                                        xaxis_title='x',
+                                        yaxis_title='f(x)')
+
+                    # Convertir la gráfica a HTML
+                    plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+
+                    # Guardar la gráfica como imagen
+                    plot_to_png(fig, f'Lagrange {polisimple}')
 
                     # Convertir DataFrame a HTML
                     df_html = df_iteraciones.to_html(classes='table table-striped', index=False)
@@ -692,7 +723,8 @@ def interpolacion(request):
                     context = {
                         'polinomio': polisimple_latex,
                         'df': df_html,
-                        'mensaje': mensaje
+                        'mensaje': mensaje,
+                        'plot_html': plot_html,
                     }
 
                     dataframe_to_txt(df_iteraciones, f'Lagrange')
@@ -756,16 +788,84 @@ def interpolacion(request):
                 except Exception as e:
                     context = {'error_message': f'Hubo un error con vandermonde: {str(e)}'}
                     return render(request, 'error.html', context)
+                
+
+            elif metodo_interpolacion == 'splinel':
+
+                xi = x_floats
+                fi = y_floats    
+
+                # Convertir X y Y a arreglos numpy
+                X = np.array(x_floats)
+                Y = np.array(y_floats)
+                n = len(X)
+                
+                # Variables para construir las funciones
+                x = sp.Symbol('x')
+                px_tabla = []
+                coef_list = []
+
+                # Calcular los coeficientes y las funciones lineales por tramos
+                for i in range(1, n):
+                    # Calcula la pendiente
+                    numerador = Y[i] - Y[i-1]
+                    denominador = X[i] - X[i-1]
+                    m = numerador / denominador
+                    
+                    # Guarda los coeficientes (m, b) como float
+                    coef_list.append([float(m), float(Y[i-1] - m * X[i-1])])
+                    
+                    # Construye la función lineal para el tramo
+                    pxtramo = Y[i-1] + m * (x - X[i-1])
+                    px_tabla.append(pxtramo)
+                
+                # Crear DataFrame para los coeficientes
+                coef_df = pd.DataFrame(coef_list, columns=['Pendiente (m)', 'Intersección (b)'])
+                coef_df_to_html = coef_df.to_html(classes='table table-striped', index=False)
+
+                # Crear DataFrame para las funciones
+                func_df = pd.DataFrame({'Función': [str(func) for func in px_tabla]})
+                func_df_to_html = func_df.to_html(classes='table table-striped', index=False)
+
+                # Evaluar las funciones en un rango de x
+                funciones_evaluadas = []
+                for i, func in enumerate(px_tabla):
+                    x_vals = np.linspace(X[i], X[i+1], 100)
+                    y_vals = [float(func.evalf(subs={x: val})) for val in x_vals]
+                    funciones_evaluadas.append((x_vals, y_vals))
+                
+                fig = go.Figure()
+
+                # Agregar puntos originales
+                fig.add_trace(go.Scatter(x=X, y=Y, mode='markers', name='Puntos originales'))
+                
+                # Agregar las funciones por tramos
+                for i, (x_vals, y_vals) in enumerate(funciones_evaluadas):
+                    fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode='lines', name=f'Tramo {i+1}'))
+                
+                fig.update_layout(title='Spline Lineal por Tramos',
+                                xaxis_title='X',
+                                yaxis_title='Y')
+                
+                # Graficar las funciones por tramos
+                plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+
+                context = {
+                    'df': coef_df_to_html,
+                    'df2': func_df_to_html,
+                    'nombre_metodo': 'Spline Lineal', 
+                    'plot_html': plot_html
+                }
+
+                dataframe_to_txt(coef_df, 'Spline_coef')
+                dataframe_to_txt(func_df, 'Spline_func')
+                plot_to_png(fig, f'Spline_Lineal_graph')
+
         
         except Exception as e:
             context = {'error_message': f'An unexpected error occurred: {str(e)}'}
             return render(request, 'error.html', context)
 
-    return render(request, 'one_method.html')
+    return render(request, 'one_method.html', context)
 
 
-
-
-
-
-        

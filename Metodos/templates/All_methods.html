@@ -43,17 +43,19 @@
 </head>
 <body>
 
-<div class="sidebar">
-    <a href="#metodo1" onclick="showForm('biseccion')">Bisección</a>
-    <a href="#metodo2" onclick="showForm('regla_falsa')">Regla Falsa</a>
-    <a href="#metodo3" onclick="showForm('punto_fijo')">Punto Fijo</a>
-    <a href="#metodo4" onclick="showForm('newton')">Newton</a>
-    <a href="#metodo5" onclick="showForm('secante')">Secante</a>
-    <a href="#metodo6" onclick="showForm('raices_multiples')">Raices Multiples</a>
-    <a href="#metodo7" onclick="showForm('metodos_iterativos')">Metodos iterativos</a>
-    <a href="#metodo8" onclick="showForm('interpolacion')">Interpolación</a>
-    
-</div>
+    <div class="sidebar">
+        <h2>Capítulo 1</h2>
+        <a href="#metodo1" onclick="showForm('biseccion')">Bisección</a>
+        <a href="#metodo2" onclick="showForm('regla_falsa')">Regla Falsa</a>
+        <a href="#metodo3" onclick="showForm('punto_fijo')">Punto Fijo</a>
+        <a href="#metodo4" onclick="showForm('newton')">Newton</a>
+        <a href="#metodo5" onclick="showForm('secante')">Secante</a>
+        <a href="#metodo6" onclick="showForm('raices_multiples')">Raíces Múltiples</a>
+        <h2>Capítulo 2</h2>
+        <a href="#metodo7" onclick="showForm('metodos_iterativos')">Métodos Iterativos</a>
+        <h2>Capítulo 3</h2>
+        <a href="#metodo8" onclick="showForm('interpolacion')">Interpolación</a>
+    </div>
 
 <div class="content">
     <div id="biseccion-form" class="form-container">
@@ -260,6 +262,8 @@
                 <option value="vandermonde">Vandermonde</option>
                 <option value="lagrange">Lagrange</option>
                 <option value="newton">Newton</option>
+                <option value="splinel">Spline Lineal</option>
+                <option value="splinecu">Spline Cubico</option>
             </select>
             <br>
             <table id="data-table" border="1">
