@@ -20,3 +20,11 @@ def plot_to_png(fig, filename):
         fig.write_image(f'resultados/{filename}.png')
     except Exception as e:
         print("An error occurred while saving the plot as PNG:", str(e))
+def text_to_txt(text,filename):
+    if not os.path.exists('resultados'):
+        os.makedirs('resultados')
+    try:
+        with open(f'resultados/{filename}.txt', 'w') as f:
+            f.write(text)
+    except Exception as e:
+        print("An error occurred while saving the text as TXT:", str(e))
