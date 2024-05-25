@@ -6,12 +6,11 @@ from sympy import *
 from django.utils.safestring import mark_safe
 import plotly.graph_objects as go
 from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi,metodo_sor
-from .utiles.saver import dataframe_to_txt,plot_to_png
+from .utiles.saver import dataframe_to_txt,plot_to_png,text_to_txt
+from .utiles.plotter import plot_fx_puntos,fx_plot
 
 def home(request):
     return render(request, 'All_methods.html')
-
-
 
 def reglaFalsaView(request):
     context = {}
@@ -583,17 +582,16 @@ def iterativos(request):
                 context=metodo_gauss_seidel(nmatriz,nvectorx,nvectorb,tol,niter)
             elif metodo=="sor":
                 context=metodo_sor(nmatriz,nvectorx,nvectorb,tol,niter,w)
+
+            dataframe_to_txt(pd.DataFrame(nmatriz),metodo+"_matrizA")
+            dataframe_to_txt(pd.DataFrame(nvectorb),metodo+"_vectorb")
+            dataframe_to_txt(context['tabla'],metodo+"_tabla")
             return render(request,'resultado_iterativo.html',context)
 
         except:
             context={'mensaje':'No se pudo realizar la operación'}
             return render(request,'resultado_iterativo.html',context)
 
-from django.shortcuts import render
-import numpy as np
-import pandas as pd
-import sympy as sp
-from .utiles.saver import dataframe_to_txt
 
 def interpolacion(request):
     if request.method == 'POST':
@@ -698,8 +696,8 @@ def interpolacion(request):
                         'plot_html': plot_html,
                     }
 
-                    dataframe_to_txt(df_iteraciones, f'Lagrange')
-
+                    dataframe_to_txt(df_iteraciones, 'lagrange')
+                    text_to_txt(polisimple)
                     return render(request, 'one_method.html', context)
                 except Exception as e:
                     context = {'error_message': f'Hubo un error con lagrange en: {str(e)}'}

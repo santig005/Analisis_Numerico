@@ -5,6 +5,7 @@ from tabulate import tabulate
 def dataframe_to_txt(dataframe, filename):
     if not os.path.exists('resultados'):
         os.makedirs('resultados')
+    dataframe = dataframe.map(lambda x: str(x) if isinstance(x, (list, np.ndarray)) else x)
     try:
         with open(f'resultados/{filename}.txt', 'w') as f:
             # Use tabulate to format the dataframe as a table
