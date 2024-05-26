@@ -75,6 +75,18 @@
     {% endif %}
     <div class="result-container">
         <!-- Aquí se mostrará la tabla generada -->
+        {% if spline %}
+            <div>
+                <h2>Coeficientes</h2>
+                    <!-- Matrix entries will be dynamically added here -->
+                    <div>
+                        {{coef | safe}}
+                    </div>
+            </div>
+            <div>
+                <h2>Trazadores s(x)</h2>
+            </div>
+        {% endif %}
         {{ df | safe }}
         {{ df2 | safe }}
     </div>
@@ -84,9 +96,8 @@
         <!-- Aquí se mostrará el gráfico de Plotly -->
         {{ plot_html | safe }}
     </div>
-    <button onclick="window.location.href = '/';">Volver</button>
+    
 </div>
-
 <!-- Agrega aquí los scripts necesarios, como el de Plotly si es necesario -->
 
 </body>

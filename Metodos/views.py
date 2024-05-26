@@ -7,7 +7,7 @@ from django.utils.safestring import mark_safe
 import plotly.graph_objects as go
 from .metodos.iterativos import metodo_gauss_seidel,metodo_jacobi,metodo_sor
 from .utiles.saver import dataframe_to_txt,plot_to_png,text_to_txt
-from .utiles.plotter import plot_fx_puntos,fx_plot
+from .utiles.plotter import plot_fx_puntos,fx_plot,spline_plot
 
 def home(request):
     return render(request, 'All_methods.html')
@@ -611,6 +611,10 @@ def interpolacion(request):
             if n<=1:
                 context = {'error_message': f'Se deben ingresar 2 puntos o más'}
                 return render(request, 'error.html', context)
+            for i in range(n-1):
+                if xi[i] >= xi[i+1]:
+                    context = {'error_message': f'Los valores de x deben estar ordenados de menor a mayor'}
+                    return render(request, 'error.html', context)
 
             if metodo_interpolacion == 'lagrange':
                 try:
@@ -696,8 +700,8 @@ def interpolacion(request):
                         'plot_html': plot_html,
                     }
 
-                    dataframe_to_txt(df_iteraciones, 'lagrange')
-                    text_to_txt(polisimple)
+                    dataframe_to_txt(df_iteraciones, "lagrange_iteraciones")
+                    text_to_txt(polisimple,"lagrange_funcion")
                     return render(request, 'one_method.html', context)
                 except Exception as e:
                     context = {'error_message': f'Hubo un error con lagrange en: {str(e)}'}
@@ -813,7 +817,7 @@ def interpolacion(request):
                 for i, (x_vals, y_vals) in enumerate(funciones_evaluadas):
                     fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode='lines', name=f'Tramo {i+1}'))
                 
-                fig.update_layout(title='Spline Lineal por Tramos',
+                fig.update_layout(title='Spline Cubico por Tramos',
                                 xaxis_title='X',
                                 yaxis_title='Y')
                 
@@ -830,6 +834,94 @@ def interpolacion(request):
                 dataframe_to_txt(coef_df, 'Spline_coef')
                 dataframe_to_txt(func_df, 'Spline_func')
                 plot_to_png(fig, f'Spline_Lineal_graph')
+            elif metodo_interpolacion=="splinecu":
+                x=xi
+                y=fi
+                A = np.zeros((4*(n-1), 4*(n-1)))
+                b = np.zeros(4*(n-1))
+                cua = np.square(x)
+                cub = np.power(x, 3)
+                c = 0
+                h = 0
+                d=3
+                
+                for i in range(n - 1):
+                    A[i, c] = cub[i]
+                    A[i, c + 1] = cua[i]
+                    A[i, c + 2] = x[i]
+                    A[i, c + 3] = 1
+                    b[i] = y[i]
+                    c += 4
+                    h += 1
+                
+                c = 0
+                for i in range(1, n):
+                    A[h, c] = cub[i]
+                    A[h, c + 1] = cua[i]
+                    A[h, c + 2] = x[i]
+                    A[h, c + 3] = 1
+                    b[h] = y[i]
+                    c += 4
+                    h += 1
+                
+                c = 0
+                for i in range(1, n - 1):
+                    A[h, c] = 3 * cua[i]
+                    A[h, c + 1] = 2 * x[i]
+                    A[h, c + 2] = 1
+                    A[h, c + 4] = -3 * cua[i]
+                    A[h, c + 5] = -2 * x[i]
+                    A[h, c + 6] = -1
+                    b[h] = 0
+                    c += 4
+                    h += 1
+                
+                c = 0
+                for i in range(1, n - 1):
+                    A[h, c] = 6 * x[i]
+                    A[h, c + 1] = 2
+                    A[h, c + 4] = -6 * x[i]
+                    A[h, c + 5] = -2
+                    b[h] = 0
+                    c += 4
+                    h += 1
+                
+                A[h, 0] = 6 * x[0]
+                A[h, 1] = 2
+                b[h] = 0
+                h += 1
+                A[h, c] = 6 * x[-1]
+                A[h, c + 1] = 2
+                b[h] = 0
+                val = np.linalg.inv(A).dot(b)
+                Tabla = val.reshape((n - 1, d + 1))
+                fxs=[]
+                for i in range(n-1):
+                    fx=""
+                    for j in range(4):
+                        fx+=str(Tabla[i,j])
+                        if j<3:
+                            fx+="*x"
+                            if j<2:
+                                fx+="**"+str(3-j)
+                            if(Tabla[i,j+1]>=0):
+                                fx+="+"
+                    fxs.append(fx)
+                tabla_df=pd.DataFrame(fxs)
+                tabla_html=tabla_df.to_html(classes='table table-striped', index=False)
+                fig=spline_plot(fxs,xi,fi)
+                plot_html=fig.to_html(full_html=False, default_height=500, default_width=1200)
+                coeficientes=pd.DataFrame(A)
+                context={
+                    'df':tabla_html,
+                    'coef':coeficientes.to_html(classes='table table-striped', index=False),
+                    'spline':True,
+                    'plot_html':plot_html
+                }
+                dataframe_to_txt(coeficientes,"spline_cubico_coef")
+                dataframe_to_txt(tabla_df,"spline_cubico_funciones")
+                plot_to_png(fig,"spline_cubico_grafica")
+
 
         
         except Exception as e:
