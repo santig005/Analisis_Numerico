@@ -141,11 +141,26 @@
 
     <div id="newton-form" class="form-container hidden">
         <h1 id="method-title">Newton</h1>
-        <form method="post" action="#">
+        <form method="post" action="{% url 'Newton' %}">
             {% csrf_token %}
             
             <label for="punto_inicial">Punto inicial:</label>
             <input type="text" id="punto_inicial" name="punto_inicial">
+            <label for="punto_inicial">Tolerancia:</label>
+            <input type="text" id="punto_inicial" name="tolerancia">
+            <label for="punto_inicial">Iteraciones:</label>
+            <input type="text" id="punto_inicial" name="iteraciones">
+            <label for="punto_inicial">Función:</label>
+            <input type="text" id="punto_inicial" name="funcion">
+            <br/>
+            <label for="punto_inicial">Derivada:</label>
+            <input type="text" id="punto_inicial" name="derivada">
+            <input type="radio" id="absoluto" name="tipo_error" value="absoluto">
+            <label for="absoluto">Absoluto</label>
+            <input type="radio" id="relativo" name="tipo_error" value="relativo">
+            <label for="relativo">Relativo</label>
+            <br/>
+            <a href="https://www.geogebra.org/calculator">Calculadora para realizar la derivada</a>
             <button type="submit">Calcular</button>
         </form>
     </div>
@@ -185,11 +200,22 @@
 
     <div id="raices_multiples-form" class="form-container hidden">
         <h1 id="method-title">Raices multiples</h1>
-        <form method="post" action="#">
+        <form method="post" action="{% url 'RaicesMultiples' %}">
             {% csrf_token %}
             
+            <label for="punto_inicial">Función:</label>
+            <input type="text" id="punto_inicial" name="funcion">
             <label for="punto_inicial">Punto inicial:</label>
             <input type="text" id="punto_inicial" name="punto_inicial">
+            <label for="punto_inicial">Tolerancia:</label>
+            <input type="text" id="punto_inicial" name="tolerancia">
+            <label for="punto_inicial">Iteraciones:</label>
+            <input type="text" id="punto_inicial" name="iteraciones">
+            <br/>
+            <input type="radio" id="absoluto" name="tipo_error" value="absoluto">
+            <label for="absoluto">Absoluto</label>
+            <input type="radio" id="relativo" name="tipo_error" value="relativo">
+            <label for="relativo">Relativo</label>
             <button type="submit">Calcular</button>
         </form>
     </div>

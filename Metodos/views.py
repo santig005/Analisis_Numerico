@@ -16,57 +16,62 @@ def reglaFalsaView(request):
     context = {}
     
     if request.method == 'POST':
-        
-        fx = request.POST["funcion"]
+        try: 
+            fx = request.POST["funcion"]
 
-        x0 = request.POST["a"]
-        X0 = float(x0)
+            x0 = request.POST["a"]
+            X0 = float(x0)
 
-        xi = request.POST["b"]
-        Xi = float(xi)
+            xi = request.POST["b"]
+            Xi = float(xi)
 
-        tol = request.POST["tolerancia"]
-        Tol = float(tol)
+            tol = request.POST["tolerancia"]
+            Tol = float(tol)
 
-        niter = request.POST["iteraciones"]
-        Niter = int(niter)
+            niter = request.POST["iteraciones"]
+            Niter = int(niter)
 
-        tipo_error = request.POST.get('tipo_error')
-        
-        datos = reglaFalsa(X0, Xi, Niter, Tol, fx, tipo_error)
+            tipo_error = request.POST.get('tipo_error')
+            
+            datos = reglaFalsa(X0, Xi, Niter, Tol, fx, tipo_error)
 
-        if "errors" in datos and datos["errors"]:
-            context['error_message'] = f'Hubo un error en el metodo Regla Falsa en: {datos["errors"]}'
+            if "errors" in datos and datos["errors"]:
+                context['error_message'] = f'Hubo un error en el metodo Regla Falsa en: {datos["errors"]}'
+                return render(request, 'error.html', context)
+            
+            if "results" in datos:
+                df = pd.DataFrame(datos["results"], columns=datos["columns"])
+                
+                x = sp.symbols('x')
+                funcion_expr = sp.sympify(fx)
+
+                xi_copy = X0
+                xs_copy = Xi
+
+                intervalo_x = np.arange(xi_copy, xs_copy, 0.1)
+                fx_func = sp.lambdify(x, funcion_expr, 'numpy')
+                intervalo_y = fx_func(intervalo_x)
+                intervalo_x_completo = np.arange(xi_copy, xs_copy, 0.1)
+                intervalo_y_completo = fx_func(intervalo_x_completo)
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
+
+                if datos.get("root") is not None:
+                    fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[float(0)], mode='markers', name='Raíz hallada'))
+
+                fig.update_layout(title=f'Función: {fx} en intervalo [{xi_copy}, {xs_copy}]',
+                                    xaxis_title='x',
+                                    yaxis_title='f(x)')
+
+                plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+                dataframe_to_txt(df, f'Regla Falsa{fx}')
+                plot_to_png(fig,f'Regla Falsa {fx}')
+                
+                context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solución es: {datos["root"]}'}
+        except Exception as e:
+            context = {'error_message': f'Hubo un error en el metodo Regla Falsa en: {str(e)}'}
             return render(request, 'error.html', context)
-        
-        if "results" in datos:
-            df = pd.DataFrame(datos["results"], columns=datos["columns"])
-            
-            x = sp.symbols('x')
-            funcion_expr = sp.sympify(fx)
-
-            xi_copy = X0
-            xs_copy = Xi
-
-            intervalo_x = np.arange(xi_copy, xs_copy, 0.1)
-            fx_func = sp.lambdify(x, funcion_expr, 'numpy')
-            intervalo_y = fx_func(intervalo_x)
-            intervalo_x_completo = np.arange(xi_copy, xs_copy, 0.1)
-            intervalo_y_completo = fx_func(intervalo_x_completo)
-
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
-
-            if datos.get("root") is not None:
-                fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[float(0)], mode='markers', name='Raíz hallada'))
-
-            fig.update_layout(title=f'Función: {fx} en intervalo [{xi_copy}, {xs_copy}]',
-                                xaxis_title='x',
-                                yaxis_title='f(x)')
-
-            plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
-            
-            context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solución es: {datos["root"]}'}
 
     return render(request, 'one_method.html', context)
 
@@ -541,6 +546,259 @@ def secante(request):
             mensaje=mark_safe(mensaje)
             context = {'mensaje':mensaje}
             return render(request, 'one_method.html', context)
+        
+
+def newton(x0, Tol, Niter, fx, df, tipo_error):
+
+    output = {
+        "columns": ["N", "xi", "F(xi)", "E"],
+        "results": [],
+        "errors": [],
+        "root": "0"
+    }
+
+    #configuración inicial
+    datos = list()
+    x = sp.Symbol('x')
+    Fun = sympify(fx)
+    DerF = sympify(df)
+
+
+    xn = []
+    derf = []
+    xi = x0 # Punto de inicio
+    f = Fun.evalf(subs={x: x0}) #función evaluada en x0
+    derivada = DerF.evalf(subs={x: x0}) #función derivada evaluada en x0
+    c = 0
+    Error = 100
+    xn.append(xi)
+
+    try:
+        datos.append([c, '{:^15.7f}'.format(x0), '{:^15.7f}'.format(f)])
+
+
+        while Error > Tol and f != 0 and derivada != 0 and c < Niter:
+
+            xi = xi-f/derivada
+            derivada = DerF.evalf(subs={x: xi})
+            f = Fun.evalf(subs={x: xi})
+            xn.append(xi)
+            c = c+1
+            if tipo_error == "absoluto":
+                Error = abs(xn[c]-xn[c-1])
+            else:
+                Error = abs(xn[c]-xn[c-1])/xn[c]
+            derf.append(derivada)
+            datos.append([c, '{:^15.7f}'.format(float(xi)), '{:^15.7E}'.format(
+                float(f)), '{:^15.7E}'.format(float(Error))])
+
+    except BaseException as e:
+        if str(e) == "can't convert complex to float":
+            output["errors"].append(
+                "Error in data: found complex in calculations")
+        else:
+            output["errors"].append("Error in data: " + str(e))
+        return output
+
+    output["results"] = datos
+    output["root"] = xi
+    return output
+
+def newtonView(request):
+    context = {}
+    datos = {}
+
+    if request.method == 'POST':
+        try:
+            fx = request.POST["funcion"]
+            derf = request.POST["derivada"]
+            x0 = request.POST["punto_inicial"]
+            X0 = float(x0)
+            tol = request.POST["tolerancia"]
+            Tol = float(tol)
+            niter = request.POST["iteraciones"]
+            Niter = int(niter)
+            tipo_error = request.POST.get('tipo_error')
+
+            datos = newton(X0, Tol, Niter, fx, derf, tipo_error)
+        
+            if "results" in datos:
+                df = pd.DataFrame(datos["results"], columns=datos["columns"])
+                
+                x = sp.symbols('x')
+                funcion_expr = sp.sympify(fx)
+
+                xi_copy = X0
+                xs_copy = X0  # Corrección: inicializamos xs_copy igual que xi_copy
+
+                intervalo_x = np.arange(xi_copy - 10, xs_copy + 10, 0.1)  # Ajusta el intervalo si es necesario
+                fx_func = sp.lambdify(x, funcion_expr, 'numpy')
+                intervalo_y = fx_func(intervalo_x)
+                intervalo_x_completo = np.arange(xi_copy - 10, xs_copy + 10, 0.1)
+                intervalo_y_completo = fx_func(intervalo_x_completo)
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
+
+                if datos.get("root") is not None:
+                    fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[0], mode='markers', name='Raíz hallada'))
+
+                fig.update_layout(title=f'Función: {fx} en intervalo [{xi_copy - 10}, {xs_copy + 10}]',
+                                xaxis_title='x',
+                                yaxis_title='f(x)')
+
+            plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+
+            dataframe_to_txt(df, f'Newton_txt {fx}')
+            plot_to_png(fig,f'Newton {fx}')
+
+            context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solución es: {datos["root"]}'}
+
+            return render(request, 'one_method.html', context)
+        
+        except Exception as e:
+                context = {'error_message': f'Hubo un error en el metodo de Newton en: {str(e)}'}
+                return render(request, 'error.html', context)
+
+    return render(request, 'one_method.html')
+
+def raicesMultiples(fx, x0, tol, niter, tipo_error):
+
+    output = {
+        "columns": ["iter", "xi", "f(xi)", "E"],
+        "iterations": niter,
+        "errors": [],
+        "results": [],
+        "root": "0"
+    }
+    
+    # Configuraciones inciales
+    results = list()
+    x = sp.Symbol('x')
+    cond = tol
+    error = 1.0000
+    ex = sympify(fx)
+
+    d_ex = diff(ex, x)  # Primera derivada de Fx
+    d2_ex = diff(d_ex, x)  # Segunda derivada de Fx
+
+
+    xP = x0
+    ex_2 = ex.subs(x, x0)  # Funcion evaluada en x0
+    ex_2 = ex_2.evalf() 
+
+    d_ex2 = d_ex.subs(x, x0) # primera derivada evaluada en x0
+    d_ex2 = d_ex2.evalf()
+
+    d2_ex2 = d2_ex.subs(x, x0) # segunda derivada evaluada en x0
+    d2_ex2 = d2_ex2.evalf()
+
+    i = 0
+    results.append([i, '{:^15.7E}'.format(x0), '{:^15.7E}'.format(ex_2)]) # Datos con formato dado
+    try:
+        while((error > cond) and (i < niter)): # Se repite hasta que el intervalo sea lo pequeño que se desee
+            if(i == 0):
+                ex_2 = ex.subs(x, xP) # Funcion evaluada en valor inicial
+                ex_2 = ex_2.evalf()
+            else:
+                d_ex2 = d_ex.subs(x, xP) # Funcion evaluada en valor inicial
+                d_ex2 = d_ex2.evalf()
+
+                d2_ex2 = d2_ex.subs(x, xP) # Funcion evaluada en valor inicial 
+                d2_ex2 = d2_ex2.evalf()
+
+                xA = xP - (ex_2*d_ex2)/((d_ex2)**2 - ex_2*d2_ex2) # Método de Newton-Raphson modificado
+
+                ex_A = ex.subs(x, xA) # Funcion evaluada en xA
+                ex_A = ex_A.evalf()
+
+                if tipo_error == "absoluto":
+                    error = Abs(xA - xP)
+                else:
+                    error = Abs(xA - xP)/Abs(xA)
+                error = error.evalf() # Se calcula el error
+                er = error
+
+                ex_2 = ex_A #se establece la nueva aproximación
+                xP = xA
+
+                results.append([i, '{:^15.7E}'.format(float(xA)), '{:^15.7E}'.format(
+                    float(ex_2)), '{:^15.7E}'.format(float(er))])
+            i += 1
+    except BaseException as e:
+        if str(e) == "can't convert complex to float":
+            output["errors"].append(
+                "Error in data: found complex in calculations")
+        else:
+            output["errors"].append("Error in data: " + str(e))
+
+        return output
+
+    output["results"] = results
+    output["root"] = xA
+    return output
+
+def raicesMultiplesView(request):
+    context = {}
+    datos = {}
+
+    if request.method == 'POST':
+        try:
+            Fx = request.POST["funcion"]
+
+            X0 = request.POST["punto_inicial"]
+            X0 = float(X0)
+
+            niter = request.POST["iteraciones"]
+            Niter = int(niter)
+
+            Tol = request.POST["tolerancia"]
+            Tol = float(Tol)
+
+            tipo_error = request.POST.get('tipo_error')
+            print(tipo_error)
+            datos = raicesMultiples(Fx,X0,Tol,Niter,tipo_error)
+
+            if "results" in datos:
+                df = pd.DataFrame(datos["results"], columns=datos["columns"])
+                
+                x = sp.symbols('x')
+                funcion_expr = sp.sympify(Fx)
+
+                xi_copy = X0
+                xs_copy = X0  # Corrección: inicializamos xs_copy igual que xi_copy
+
+                intervalo_x = np.arange(xi_copy - 10, xs_copy + 10, 0.1)  # Ajusta el intervalo si es necesario
+                fx_func = sp.lambdify(x, funcion_expr, 'numpy')
+                intervalo_y = fx_func(intervalo_x)
+                intervalo_x_completo = np.arange(xi_copy - 10, xs_copy + 10, 0.1)
+                intervalo_y_completo = fx_func(intervalo_x_completo)
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=intervalo_x_completo, y=intervalo_y_completo, mode='lines', name='f(x)'))
+
+                if datos.get("root") is not None:
+                    fig.add_trace(go.Scatter(x=[float(datos["root"])], y=[0], mode='markers', name='Raíz hallada'))
+
+                fig.update_layout(title=f'Función: {Fx} en intervalo [{xi_copy - 10}, {xs_copy + 10}]',
+                                xaxis_title='x',
+                                yaxis_title='f(x)')
+
+            plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+
+            dataframe_to_txt(df, f'RaicesMultiples_txt {Fx}')
+            plot_to_png(fig,f'RaicesMultiples {Fx}')
+
+            context = {'df': df.to_html(), 'plot_html': plot_html, 'mensaje': f'La solución es: {datos["root"]}'}
+
+            return render(request, 'one_method.html', context)
+
+        except Exception as e:
+                context = {'error_message': f'Hubo un error en el metodo de Newton en: {str(e)}'}
+                return render(request, 'error.html', context)
+        
+    return render(request, 'one_method.html')
+    
 
 def iterativos(request):
     if request.method == 'POST':
@@ -685,7 +943,7 @@ def interpolacion(request):
                     plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
 
                     # Guardar la gráfica como imagen
-                    plot_to_png(fig, f'Lagrange {polisimple}')
+                    plot_to_png(fig, f'Lagrange_img{polisimple}')
 
                     # Convertir DataFrame a HTML
                     df_html = df_iteraciones.to_html(classes='table table-striped', index=False)
@@ -701,15 +959,80 @@ def interpolacion(request):
                     }
 
                     dataframe_to_txt(df_iteraciones, "lagrange_iteraciones")
-                    text_to_txt(polisimple,"lagrange_funcion")
+                    text_to_txt(str(polisimple),"lagrange_funcion")
                     return render(request, 'one_method.html', context)
                 except Exception as e:
                     context = {'error_message': f'Hubo un error con lagrange en: {str(e)}'}
                     return render(request, 'error.html', context)
 
             elif metodo_interpolacion == 'newton':
-                # Implementar método de Newton aquí
-                pass
+                try:
+                    xi = x_floats
+                    fi = y_floats
+
+                    # Convertir X y Y a arreglos numpy
+                    X = np.array(x_floats)
+                    Y = np.array(y_floats)
+                    n = len(X)
+
+                    # Calcular la tabla de diferencias divididas
+                    D = np.zeros((n, n))
+                    D[:, 0] = Y.T
+                    for i in range(1, n):
+                        for j in range(n - i):
+                            D[j, i] = (D[j + 1, i - 1] - D[j, i - 1]) / (X[j + i] - X[j])
+                    
+                    Coef = D[0, :]  # Coeficientes del polinomio de Newton
+
+                    # Crear DataFrame para la tabla de diferencias divididas
+                    diff_table_df = pd.DataFrame(D)
+                    diff_table_df_to_html = diff_table_df.to_html(classes='table table-striped', index=False)
+
+                    # Construir el polinomio de Newton
+                    x = sp.Symbol('x')
+                    newton_poly = Coef[0]
+                    product_term = 1
+                    for i in range(1, n):
+                        product_term *= (x - X[i-1])
+                        newton_poly += Coef[i] * product_term
+
+                    # Crear DataFrame para el polinomio de Newton
+                    newton_poly_df = pd.DataFrame({'Polinomio': [str(newton_poly)]})
+                    newton_poly_df_to_html = newton_poly_df.to_html(classes='table table-striped', index=False)
+
+                    # Evaluar el polinomio en un rango de x
+                    x_vals = np.linspace(min(X), max(X), 100)
+                    y_vals = [float(newton_poly.evalf(subs={x: val})) for val in x_vals]
+
+                    fig = go.Figure()
+
+                    # Agregar puntos originales
+                    fig.add_trace(go.Scatter(x=X, y=Y, mode='markers', name='Puntos originales'))
+
+                    # Agregar el polinomio de Newton
+                    fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode='lines', name='Polinomio de Newton'))
+
+                    fig.update_layout(title='Interpolación de Newton con Diferencias Divididas',
+                                    xaxis_title='X',
+                                    yaxis_title='Y')
+
+                    # Graficar el polinomio de Newton
+                    plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
+
+                    context = {
+                        'df': diff_table_df_to_html,
+                        'df2': newton_poly_df_to_html,
+                        'nombre_metodo': 'Newton Diferencias Divididas', 
+                        'plot_html': plot_html
+                    }
+
+                    dataframe_to_txt(diff_table_df, 'Newton_diff_table')
+                    dataframe_to_txt(newton_poly_df, 'Newton_poly')
+                    plot_to_png(fig, 'Newton_DiffDiv_graph')
+                    return render(request, 'one_method.html', context)
+                except Exception as e:
+                    context = {'error_message': f'Hubo un error con Newton Diferencias Divididas en: {str(e)}'}
+                    return render(request, 'error.html', context)
 
             elif metodo_interpolacion == 'vandermonde':
                 try:
