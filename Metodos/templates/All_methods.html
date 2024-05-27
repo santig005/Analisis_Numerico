@@ -1,50 +1,136 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Metodos Numericos</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .sidebar {
-            height: 100%;
-            width: 200px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-color: #f0f0f0;
-            padding-top: 20px;
-        }
-        .sidebar a {
-            padding: 10px;
-            text-decoration: none;
-            color: #333;
-            display: block;
-            transition: background-color 0.3s;
-        }
-        .sidebar a:hover {
-            background-color: #ddd;
-        }
-        .content {
-            margin-left: 220px;
-            padding: 20px;
-        }
-        .form-container {
-            margin-bottom: 20px;
-        }
-        .hidden {
-            display: none;
-        }
+       body {
+    margin: 0;
+    padding: 0;
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.sidebar {
+    height: 100%;
+    width: 220px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #343a40;
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centrará horizontalmente los elementos */
+    box-shadow: 2px 0 5px white;
+}
+
+.sidebar h2 {
+    color: #ffdd57; /* Cambia este color al que prefieras */
+    font-weight: 600;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.sidebar a {
+    padding: 15px 0px;
+    text-decoration: none;
+    color: #fff;
+    display: block;
+    transition: background-color 0.3s, color 0.3s;
+    width: 100%; /* Asegura que los enlaces ocupen todo el ancho del sidebar */
+    text-align: center; /* Centra el texto dentro de los enlaces */
+    font-weight: 500;
+}
+
+.sidebar a:hover {
+    background-color: #495057;
+    color: #fff;
+    width: 100%;
+}
+
+.content {
+    margin-left: 240px;
+    padding: 40px;
+    background-color: #ffffff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    max-width: 800px;
+    margin-top: 20px;
+}
+
+.form-container {
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.form-container input[type="text"],
+.form-container input[type="radio"],
+.form-container button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+    font-family: "Montserrat", sans-serif;
+}
+
+.form-container input[type="radio"] {
+    width: auto;
+    margin-right: 10px;
+}
+
+.form-container button {
+    background-color: #343a40;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.form-container label,
+.form-container input[type="radio"] {
+    display: inline-block;
+    margin-right: 10px; /* Espacio entre los elementos */
+}
+
+.form-container button:hover {
+    background-color: #495057;
+}
+
+.hidden {
+    display: none;
+}
+.caps{
+    color: #f5f5f5;
+}
+        
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h2>Capítulo 1</h2>
+        <h2 id="caps">Capítulo 1</h2>
         <a href="#metodo1" onclick="showForm('biseccion')">Bisección</a>
         <a href="#metodo2" onclick="showForm('regla_falsa')">Regla Falsa</a>
         <a href="#metodo3" onclick="showForm('punto_fijo')">Punto Fijo</a>
@@ -155,12 +241,15 @@
             <br/>
             <label for="punto_inicial">Derivada:</label>
             <input type="text" id="punto_inicial" name="derivada">
+            <label for="tipo_error">Tipo de error:</label>
             <input type="radio" id="absoluto" name="tipo_error" value="absoluto">
             <label for="absoluto">Absoluto</label>
             <input type="radio" id="relativo" name="tipo_error" value="relativo">
             <label for="relativo">Relativo</label>
             <br/>
             <a href="https://www.geogebra.org/calculator">Calculadora para realizar la derivada</a>
+            
+            <br><br>
             <button type="submit">Calcular</button>
         </form>
     </div>
@@ -386,6 +475,6 @@
         }
     }
 </script>
-<button onclick="window.history.back()">Volver</button>
+
 </body>
 </html>

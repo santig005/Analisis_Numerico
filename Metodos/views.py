@@ -663,7 +663,6 @@ def newtonView(request):
     return render(request, 'one_method.html')
 
 def raicesMultiples(fx, x0, tol, niter, tipo_error):
-
     output = {
         "columns": ["iter", "xi", "f(xi)", "E"],
         "iterations": niter,
@@ -672,70 +671,61 @@ def raicesMultiples(fx, x0, tol, niter, tipo_error):
         "root": "0"
     }
     
-    # Configuraciones inciales
-    results = list()
+    # Configuraciones iniciales
+    results = []
     x = sp.Symbol('x')
-    cond = tol
-    error = 1.0000
     ex = sympify(fx)
+    
+    d_ex = diff(ex, x)  # Primera derivada de fx
+    d2_ex = diff(d_ex, x)  # Segunda derivada de fx
 
-    d_ex = diff(ex, x)  # Primera derivada de Fx
-    d2_ex = diff(d_ex, x)  # Segunda derivada de Fx
+    ex_2 = ex.subs(x, x0).evalf()  # Funcion evaluada en x0
+    d_ex2 = d_ex.subs(x, x0).evalf()  # Primera derivada evaluada en x0
+    d2_ex2 = d2_ex.subs(x, x0).evalf()  # Segunda derivada evaluada en x0
 
-
-    xP = x0
-    ex_2 = ex.subs(x, x0)  # Funcion evaluada en x0
-    ex_2 = ex_2.evalf() 
-
-    d_ex2 = d_ex.subs(x, x0) # primera derivada evaluada en x0
-    d_ex2 = d_ex2.evalf()
-
-    d2_ex2 = d2_ex.subs(x, x0) # segunda derivada evaluada en x0
-    d2_ex2 = d2_ex2.evalf()
+    # Verificar si la primera o la segunda derivada son cero
+    if d_ex2 == 0 or d2_ex2 == 0:
+        output["errors"].append("Error: La primera o la segunda derivada evaluadas en x0 son cero.")
+        print('entro')
+        return output
 
     i = 0
-    results.append([i, '{:^15.7E}'.format(x0), '{:^15.7E}'.format(ex_2)]) # Datos con formato dado
+    error = 1.0000
+    results.append([i, '{:^15.7E}'.format(x0), '{:^15.7E}'.format(ex_2)])  # Datos con formato dado
+
     try:
-        while((error > cond) and (i < niter)): # Se repite hasta que el intervalo sea lo pequeño que se desee
-            if(i == 0):
-                ex_2 = ex.subs(x, xP) # Funcion evaluada en valor inicial
-                ex_2 = ex_2.evalf()
+        while (error > tol) and (i < niter):  # Se repite hasta que el intervalo sea lo pequeño que se desee
+            if i == 0:
+                ex_2 = ex.subs(x, x0).evalf()  # Funcion evaluada en valor inicial
             else:
-                d_ex2 = d_ex.subs(x, xP) # Funcion evaluada en valor inicial
-                d_ex2 = d_ex2.evalf()
+                d_ex2 = d_ex.subs(x, x0).evalf()  # Primera derivada evaluada en x0
+                d2_ex2 = d2_ex.subs(x, x0).evalf()  # Segunda derivada evaluada en x0
 
-                d2_ex2 = d2_ex.subs(x, xP) # Funcion evaluada en valor inicial 
-                d2_ex2 = d2_ex2.evalf()
+                # Verificar si la primera o la segunda derivada son cero en cada iteración
+                if d_ex2 == 0 or d2_ex2 == 0:
+                    output["errors"].append("Error: La primera o la segunda derivada evaluadas durante la iteración son cero.")
+                    return output
 
-                xA = xP - (ex_2*d_ex2)/((d_ex2)**2 - ex_2*d2_ex2) # Método de Newton-Raphson modificado
-
-                ex_A = ex.subs(x, xA) # Funcion evaluada en xA
-                ex_A = ex_A.evalf()
+                xA = x0 - (ex_2 * d_ex2) / ((d_ex2) ** 2 - ex_2 * d2_ex2)  # Método de Newton-Raphson modificado
+                ex_A = ex.subs(x, xA).evalf()  # Funcion evaluada en xA
 
                 if tipo_error == "absoluto":
-                    error = Abs(xA - xP)
+                    error = Abs(xA - x0)
                 else:
-                    error = Abs(xA - xP)/Abs(xA)
-                error = error.evalf() # Se calcula el error
-                er = error
+                    error = Abs(xA - x0) / Abs(xA)
+                error = error.evalf()  # Se calcula el error
 
-                ex_2 = ex_A #se establece la nueva aproximación
-                xP = xA
+                ex_2 = ex_A  # Se establece la nueva aproximación
+                x0 = xA
 
-                results.append([i, '{:^15.7E}'.format(float(xA)), '{:^15.7E}'.format(
-                    float(ex_2)), '{:^15.7E}'.format(float(er))])
+                results.append([i, '{:^15.7E}'.format(float(xA)), '{:^15.7E}'.format(float(ex_2)), '{:^15.7E}'.format(float(error))])
             i += 1
-    except BaseException as e:
-        if str(e) == "can't convert complex to float":
-            output["errors"].append(
-                "Error in data: found complex in calculations")
-        else:
-            output["errors"].append("Error in data: " + str(e))
-
+    except Exception as e:
+        output["errors"].append(f"Error en los datos: {str(e)}")
         return output
 
     output["results"] = results
-    output["root"] = xA
+    output["root"] = x0
     return output
 
 def raicesMultiplesView(request):
@@ -756,10 +746,10 @@ def raicesMultiplesView(request):
             Tol = float(Tol)
 
             tipo_error = request.POST.get('tipo_error')
-            print(tipo_error)
             datos = raicesMultiples(Fx,X0,Tol,Niter,tipo_error)
 
-            if "results" in datos:
+
+            if "results" in datos and datos["results"]:
                 df = pd.DataFrame(datos["results"], columns=datos["columns"])
                 
                 x = sp.symbols('x')
@@ -784,6 +774,10 @@ def raicesMultiplesView(request):
                                 xaxis_title='x',
                                 yaxis_title='f(x)')
 
+            if "errors" in datos and datos["errors"]:
+                context = {'error_message': f'Hubo un error en el metodo de Newton en: {str(datos["errors"])}'}
+                return render(request, 'error.html', context)
+            
             plot_html = fig.to_html(full_html=False, default_height=500, default_width=700)
 
             dataframe_to_txt(df, f'RaicesMultiples_txt {Fx}')
