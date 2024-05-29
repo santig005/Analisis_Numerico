@@ -267,6 +267,14 @@
 
     <div id="newton-form" class="form-container hidden">
         <h1 id="method-title">Newton</h1>
+        <p>Para garantizar la precisión y eficacia del método de Newton, es fundamental cumplir con las siguientes condiciones:<br/><br/>
+            "Punto inicial" debe ser un valor numérico que servirá como punto de partida para el método.<br/><br/>
+            La función a evaluar debe ser continua y debe cumplir el siguiente formato. EJM: x**3 + 7*x**2 - 60<br/><br/>
+            La tolerancia puede ser ingresada en formato decimal EJM: 0.0001 o punto flotante EJM 0.5e-5.Ej Si se quiere un error menor al 1% poner 0.01<br/><br/>
+            La derivada de la función debe ser ingresada en el formato adecuado. Ejemplo: 3*x**2 + 14*x<br/><br/>
+            El "Número máximo de iteraciones" debe ser un número entero positivo, que limita la cantidad de iteraciones permitidas.<br/><br/>
+            Seleccione el "Tipo de error" entre absoluto o relativo para determinar el criterio de convergencia.
+        </p>
         <form method="post" action="{% url 'Newton' %}">
             {% csrf_token %}
             
@@ -329,6 +337,13 @@
 
     <div id="raices_multiples-form" class="form-container hidden">
         <h1 id="method-title">Raices multiples</h1>
+        <p>Para garantizar la precisión y eficacia del método de Raices Multiples, es fundamental cumplir con las siguientes condiciones:<br/><br/>
+            "Punto inicial" debe ser un valor numérico que servirá como punto de partida para el método.<br/><br/>
+            La función a evaluar debe ser continua y debe cumplir el siguiente formato. EJM: x**3 + 7*x**2 - 60<br/><br/>
+            La tolerancia puede ser ingresada en formato decimal EJM: 0.0001 o punto flotante EJM 0.5e-5.Ej Si se quiere un error menor al 1% poner 0.01<br/><br/>
+            El "Número máximo de iteraciones" debe ser un número entero positivo, que limita la cantidad de iteraciones permitidas.<br/><br/>
+            Seleccione el "Tipo de error" entre absoluto o relativo para determinar el criterio de convergencia.
+        </p>
         <form method="post" action="{% url 'RaicesMultiples' %}">
             {% csrf_token %}
             
